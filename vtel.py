@@ -8,143 +8,117 @@ from LINSTOR_CLI import LINSTOR_action as la
 
 class CLI():
     def __init__(self):
-        self.parser_first()
-        self.parser_second()
-        self.parser_thrid()
-        self.stor_arg()
-        self.iscsi_arg()
-        self.vtel_help()
+        self.parser_vtel()
+        self.parser_stor()
+        self.parser_iscsi()
         self.args = self.vtel.parse_args()
         self.judge()
 
 
-    def parser_first(self):
+    def parser_vtel(self):
         self.vtel = argparse.ArgumentParser(prog='vtel',formatter_class=argparse.RawTextHelpFormatter, add_help=False)
-        sub_vtel = self.vtel.add_subparsers(dest='vtel_next')
+        sub_vtel = self.vtel.add_subparsers(dest='vtel_sub')
 
         # add all sub parse
-        self.vtel_stor = sub_vtel.add_parser('stor',help='for storage resource management...',add_help=False)
-        self.vtel_iscsi = sub_vtel.add_parser('iscsi',help='for iscsi resource management...',add_help=False)
+        self.vtel_stor = sub_vtel.add_parser('stor',help='Management operations for LINSTOR',add_help=False)
+        self.vtel_iscsi = sub_vtel.add_parser('iscsi',help='Management operations for iSCSI',add_help=False)
         self.vtel_fc = sub_vtel.add_parser('fc',help='for fc resource management...',add_help=False)
         self.vtel_ceph = sub_vtel.add_parser('ceph',help='for ceph resource management...',add_help=False)
 
-    def parser_second(self):
+    def parser_stor(self):
         ##stor
-        sub_vtel_stor = self.vtel_stor.add_subparsers(dest='stor_next')
-        self.vtel_stor_node = sub_vtel_stor.add_parser('node', help='node operation')
-        self.vtel_stor_resource = sub_vtel_stor.add_parser('resource', help='resource operation')
-        self.vtel_stor_storagepool = sub_vtel_stor.add_parser('storagepool', help='storagepool operation')
-        self.vtel_stor_snap = sub_vtel_stor.add_parser('snap', help='snap operation')
+        sub_vtel_stor = self.vtel_stor.add_subparsers(dest='stor_sub')
+        self.stor_node = sub_vtel_stor.add_parser('node', aliases='n', help='Management operations for node')
+        self.stor_resource = sub_vtel_stor.add_parser('resource', aliases='r', help='Management operations for storagepool')
+        self.stor_storagepool = sub_vtel_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool')
+        self.stor_snap = sub_vtel_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
 
-        ##iscsi
-        sub_vtel_iscsi = self.vtel_iscsi.add_subparsers(dest='iscsi_next')
-        self.vtel_iscsi_create = sub_vtel_iscsi.add_parser('create',help='iscsi resource create...', add_help=False)
-        self.vtel_iscsi_show = sub_vtel_iscsi.add_parser('show',help='iscsi resource modify...', add_help=False)
-        self.vtel_iscsi_modify = sub_vtel_iscsi.add_parser('modify',help='iscsi resource create...', add_help=False)
-        self.vtel_iscsi_delete = sub_vtel_iscsi.add_parser('delete',help='iscsi resource modify...', add_help=False)
-
-
-    def parser_thrid(self):
         ###node
-        sub_vtel_stor_node = self.vtel_stor_node.add_subparsers(dest='node_next')
-        self.vtel_stor_node_create = sub_vtel_stor_node.add_parser('create',help='node create')
-        self.vtel_stor_node_modify = sub_vtel_stor_node.add_parser('modify', help='node modify')
-        self.vtel_stor_node_delete = sub_vtel_stor_node.add_parser('delete', help='node delete')
-        self.vtel_stor_node_show = sub_vtel_stor_node.add_parser('show', help='node show')
-
+        sub_stor_node = self.stor_node.add_subparsers(dest='node_sub')
+        self.node_create = sub_stor_node.add_parser('create', aliases='c', help='Create the node')
+        self.node_modify = sub_stor_node.add_parser('modify', aliases='m', help='Modify the node')
+        self.node_delete = sub_stor_node.add_parser('delete', aliases='d', help='Delete the node')
+        self.node_show = sub_stor_node.add_parser('show', aliases='s', help='Displays the node view')
 
         ###resource
-        sub_vtel_stor_resource = self.vtel_stor_resource.add_subparsers(dest='resource_next')
-        self.vtel_stor_resource_create = sub_vtel_stor_resource.add_parser('create', help='resource create')
-        self.vtel_stor_resource_modify = sub_vtel_stor_resource.add_parser('modify',help='resource modify')
-        self.vtel_stor_resource_delete = sub_vtel_stor_resource.add_parser('delete', help='resource delete')
-        self.vtel_stor_resource_show = sub_vtel_stor_resource.add_parser('show', help='resource show')
-
+        stor_resource = self.stor_resource.add_subparsers(dest='resource_sub')
+        self.resource_create = stor_resource.add_parser('create', aliases='c', help='Create the resource')  # usage =
+        self.resource_modify = stor_resource.add_parser('modify', aliases='m',help='Modify the resource')
+        self.resource_delete = stor_resource.add_parser('delete', aliases='d',help='Delete the resource')
+        self.resource_show = stor_resource.add_parser('show', aliases='s', help='Displays the resource view')
 
         ###storagepool
-        sub_vtel_stor_storagepool = self.vtel_stor_storagepool.add_subparsers(dest='storagepool_next')
-        self.vtel_stor_storagepool_create = sub_vtel_stor_storagepool.add_parser('create', help='storagepool create')
-        self.vtel_stor_storagepool_modify = sub_vtel_stor_storagepool.add_parser('modify',help='storagepool modify')
-        self.vtel_stor_storagepool_delete = sub_vtel_stor_storagepool.add_parser('delete', help='storagepool delete')
-        self.vtel_stor_storagepool_show = sub_vtel_stor_storagepool.add_parser('show', help='storagepool show')
-
+        sub_stor_storagepool = self.stor_storagepool.add_subparsers(dest='storagepool_sub')
+        self.storagepool_create = sub_stor_storagepool.add_parser('create', aliases='c',help='Create the storagpool')
+        self.storagepool_modify = sub_stor_storagepool.add_parser('modify', aliases='m',help='Modify the storagpool')
+        self.storagepool_delete = sub_stor_storagepool.add_parser('delete', aliases='d',help='Delete the storagpool')
+        self.storagepool_show = sub_stor_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view')
 
         ###snap
-        sub_vtel_stor_snap = self.vtel_stor_snap.add_subparsers(dest='snap_next')
-        self.vtel_stor_snap_create = sub_vtel_stor_snap.add_parser('create',help='snap create')
-        self.vtel_stor_snap_modify = sub_vtel_stor_snap.add_parser('modify',help='snap modify')
-        self.vtel_stor_snap_delete = sub_vtel_stor_snap.add_parser('delete', help='snap delete')
-        self.vtel_stor_snap_show = sub_vtel_stor_snap.add_parser('show', help='snap show')
+        sub_stor_snap = self.stor_snap.add_subparsers(dest='snap_sub')
+        self.snap_create = sub_stor_snap.add_parser('create', help='Create the snapshot')
+        self.snap_modify = sub_stor_snap.add_parser('modify', help='Modify the snapshot')
+        self.snap_delete = sub_stor_snap.add_parser('delete', help='Delete the snapshot')
+        self.snap_show = sub_stor_snap.add_parser('show', help='Displays the snapshot view')
 
-
-    def stor_arg(self):
         ###stor node create
-        self.vtel_stor_node_create.add_argument('node',metavar='NODE',action='store',help='node name')
-        self.vtel_stor_node_create.add_argument('-ip', dest='ip',action='store', help='ip')
-        self.vtel_stor_node_create.add_argument('-nt', dest='nodetype',action='store',help='node type:Combined/Controller/Auxiliary/Satellite')
+        self.node_create.add_argument('node', metavar='NODE', action='store', help='node name')
+        self.node_create.add_argument('-ip', dest='ip', action='store', help='ip', required=True)
+        self.node_create.add_argument('-nt', dest='nodetype', action='store', help='node type:Combined/...',required=True)
 
         ###stor node modify
 
         ###stor node delete
-        self.vtel_stor_node_delete.add_argument('node',metavar='NODE',action='store',help='node name')
+        self.node_delete.add_argument('node', action='store', help='node name')
 
         ###stor node show
-        self.vtel_stor_node_show.add_argument('node',metavar='NODE',help='Show Node view', action='store',nargs='?',default=None)
-
+        self.node_show.add_argument('node', help='Show Node view', action='store', nargs='?', default=None)
 
         ###stor resource create
 
-        self.vtel_stor_resource_create.add_argument('resource',metavar='RESOURCE',action='store',help='define resource name to be created.')
-        self.vtel_stor_resource_create.add_argument('-s',dest='size',action='store',help='define resource size to be created.In addition to creating diskless resource, you must enter SIZE')
+        self.resource_create.add_argument('resource', action='store',help='define resource name to be created.')
+        self.resource_create.add_argument('-s', dest='size', action='store',help='define resource size to be created.In addition to creating diskless resource, you must enter SIZE')
 
-        group_auto = self.vtel_stor_resource_create.add_argument_group(title='auto create')
-        group_manual = self.vtel_stor_resource_create.add_argument_group(title='manual create')
-        group_manual_diskless = self.vtel_stor_resource_create.add_argument_group(title='diskless create')
+        group_auto = self.resource_create.add_argument_group(title='auto create')
+        group_auto.add_argument('-a', dest='auto', action='store_true', default=False,help='choose to create automatically')
+        group_auto.add_argument('-num', dest='num', action='store', help='specify the quantity', type=int)
 
-        group_auto.add_argument('-a', dest='auto',action='store_true', default=False,help='choose to create automatically')
-        group_auto.add_argument('-num',dest='num',action='store',help='specify the quantity',type=int)
-        group_manual.add_argument('-n',dest='node',action='store',help='specify the node of the resource')
-        group_manual.add_argument('-sp', dest='storagepool',help='create storagepool')
+        group_manual = self.resource_create.add_argument_group(title='manual create')
+        group_manual.add_argument('-n', dest='node', action='store', help='specify the node of the resource')
+        group_manual.add_argument('-sp', dest='storagepool', help='create storagepool')
 
-        #group_manual_diskless.add_argument('-n',dest='node',action='store',help='specify the node of the resource')
-        group_manual_diskless.add_argument('-diskless',action='store_true',default=False,dest='diskless',help='diskless')
+        group_manual_diskless = self.resource_create.add_argument_group(title='diskless create')
+        group_manual_diskless.add_argument('-diskless', action='store_true', default=False, dest='diskless',help='diskless')
 
         ###stor resource modify
-        self.vtel_stor_resource_modify.add_argument('resource',metavar='RESOURCE',action='store',help='resources to be modified')
-        self.vtel_stor_resource_modify.add_argument('-n',dest='node',action='store',help='node to be modified')
-        self.vtel_stor_resource_modify.add_argument('-sp',dest='storagepool',action='store',help='Storagepool')
-        self.vtel_stor_resource_modify.add_argument('-s',dest='size',action='store',help='size')
-        self.vtel_stor_resource_modify.add_argument('-diskless',action='store_true',default=False,dest='diskless',help='diskless')
-        #self.vtel_stor_resource_modify.add_argument('-rollback',dest='rollback',help='snapshot rollback,used with \'-snap\'')
-        #self.vtel_stor_resource_modify.add_argument('-snap',dest='snap',help='select the snapshot to roll back,used with \'-rollback\'')
+        self.resource_modify.add_argument('resource',action='store', help='resources to be modified')
+        self.resource_modify.add_argument('-n', dest='node', action='store', help='node to be modified')
+        self.resource_modify.add_argument('-sp', dest='storagepool', action='store', help='Storagepool')
 
         ###stor resource delete
-        self.vtel_stor_resource_delete.add_argument('resource',metavar='RESOURCE',action='store',help='the resource to delete')
-        self.vtel_stor_resource_delete.add_argument('-n',dest='node',action='store',help='the node to delete')
-        self.vtel_stor_resource_delete.add_argument('-y',dest='yes',action='store_true',help='Skip to confirm selection',default=False)
+        self.resource_delete.add_argument('resource', action='store', help='the resource to delete')
+        self.resource_delete.add_argument('-n', dest='node', action='store', help='the node to delete')
+        self.resource_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
 
         ###stor resource show
-        self.vtel_stor_resource_show.add_argument('resource',help='Show Resource view',action='store', nargs='?')
+        self.resource_show.add_argument('resource', help='Show Resource view', action='store', nargs='?')
 
         ###stor storagepool create
-        self.vtel_stor_storagepool_create.add_argument('storagepool',metavar='STORAGEPOOL',action='store',help='storagepool name')
-        self.vtel_stor_storagepool_create.add_argument('-n',dest='node',action='store',help='node name')
-        group_type = self.vtel_stor_storagepool_create.add_mutually_exclusive_group()
-        group_type.add_argument('-lvm',dest='lvm',action='store',help='vg name')
-        group_type.add_argument('-tlv',dest='tlv',action='store',help='thinlv name')
+        self.storagepool_create.add_argument('storagepool', action='store', help='storagepool name')
+        self.storagepool_create.add_argument('-n', dest='node', action='store', help='node name')
+        group_type = self.storagepool_create.add_mutually_exclusive_group()
+        group_type.add_argument('-lvm', dest='lvm', action='store', help='vg name')
+        group_type.add_argument('-tlv', dest='tlv', action='store', help='thinlv name')
 
         ###stor storagepool modify
 
-
         ###stor storagepool delete
-        self.vtel_stor_storagepool_delete.add_argument('storagepool', metavar='STORAGEPOOL',help='storagepool name',action='store')
-        self.vtel_stor_storagepool_delete.add_argument('-n',dest='node',action='store',help='node name')
-        self.vtel_stor_storagepool_delete.add_argument('-y', dest='yes', action='store_true',
-                                                    help='Skip to confirm selection', default=False)
+        self.storagepool_delete.add_argument('storagepool', help='storagepool name', action='store')
+        self.storagepool_delete.add_argument('-n', dest='node', action='store', help='node name')
+        self.storagepool_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
 
         ###stor storgagepool show
-        self.vtel_stor_storagepool_show.add_argument('storagepool',metavar='STORAGEPOOL', help='Show Storagepool view', action='store', nargs='?')
-
+        self.storagepool_show.add_argument('storagepool', help='Show Storagepool view', action='store',nargs='?')
 
         ###stor snap create
 
@@ -154,382 +128,249 @@ class CLI():
 
         ###stor snap show
 
+    def parser_iscsi(self):
+        ##iscsi
+        sub_vtel_iscsi = self.vtel_iscsi.add_subparsers(dest='iscsi_next')
+        self.vtel_iscsi_create = sub_vtel_iscsi.add_parser('create', help='iscsi resource create...', add_help=False)
+        self.vtel_iscsi_show = sub_vtel_iscsi.add_parser('show', help='iscsi resource modify...', add_help=False)
+        self.vtel_iscsi_modify = sub_vtel_iscsi.add_parser('modify', help='iscsi resource create...', add_help=False)
+        self.vtel_iscsi_delete = sub_vtel_iscsi.add_parser('delete', help='iscsi resource modify...', add_help=False)
 
 
 
 
-    def iscsi_arg(self):
 
-        ### iscsi create
-
-        self.vtel_iscsi_create.add_argument('-h',dest='host',action='store',help='host')
-        self.vtel_iscsi_create.add_argument('-hg',dest='host_group',action='store',help='host group')
-        self.vtel_iscsi_create.add_argument('-dg',dest='drive_group',action='store',help='driver group')
-        self.vtel_iscsi_create.add_argument('-m',dest='map',action='store',help='mapping')
-        self.vtel_iscsi_create.add_argument('-mem',dest='member',action='store',help='member')
-        self.vtel_iscsi_create.add_argument('-lid', dest='lun_id', action='store', help='member',type=int)
-        # --path
-        # --al(输入INITIATOR，获取iqn)
-        # -target（输入target获取target iqn）
-
-
-        ### iscsi show
-        group_iscsi_show = self.vtel_iscsi_show.add_mutually_exclusive_group(required=False)
-        group_iscsi_show.add_argument('-h',dest='host',action='store',help='host',nargs='?',const='-h',default=None)
-        group_iscsi_show.add_argument('-hg',dest='host_group',action='store',help='host group',nargs='?',const='-hg',default=None)
-        group_iscsi_show.add_argument('-rg',dest='resource_group',action='store',help='resource group',nargs='?',const='-rg',default=None)
-        group_iscsi_show.add_argument('-r',dest='resource',action='store',help='resource',nargs='?',const='-r',default=None)
-        group_iscsi_show.add_argument('-m',dest='member',action='store',help='member',nargs='?',const='-m',default=None)
-
-
-#iscsi
-    def vtel_help(self):
-        if len(sys.argv) == 1:
-            # display help message when no args are passed.
-            self.vtel.print_help()
-            sys.exit(1)
-
-
-
-    def stor_node_create(self):
+    def case_node(self):
         args = self.args
-        parser = self.vtel_stor_node_create
+        parser_create = self.node_create
+        parser_delete = self.node_delete
 
-        if args.node and args.nodetype and args.ip:
-            la.linstor_create_node(args.node,args.ip,args.nodetype)
-        else:
-            parser.print_help()
-
-    def stor_node_modify(self):
-        pass
-
-    def stor_node_delete(self):
-        args = self.args
-        parser = self.vtel_stor_node_delete
-
-        if args.node:
-            if la.confirm_del():
-                la.linstor_delete_node(args.node)
-        else:
-            parser.print_help()
-
-    def stor_node_show(self):
-        args = self.args
-        tb = Process.Table_show()
-        tb.run()
-        if args.node:
-            tb.node_one(args.node)
-        else:
-            tb.node_all()
-
-
-    def stor_resource_create(self):
-        args = self.args
-        parser = self.vtel_stor_resource_create
-
-        #创建resource
-        if args.size:
-            if args.auto:
-                if args.node:
-                    print('自动创建不需要-n，手动创建不需要-a')
-                elif args.storagepool:
-                    print('自动创建不需要-sp')
-                elif args.diskless:
-                    print('自动创建不需要-diskless')
-                elif args.num:
-                    la.linstor_create_res_auto(args.resource,args.size,args.num)
-                else:
-                    print('自动创建需要还需要-num')#提示
-
-            elif args.storagepool and args.node:
-                if args.num:
-                    print('手动创建不需要-num')
-
-                elif args.diskless:
-                    print('手动创建不需要-diskless，创建diskless不需要-s,-n和-sp')
-                else:
-                    la.linstor_create_res_manual(args.resource,args.size,args.node,args.storagepool)
-
-            elif args.node:
-                if args.num:
-                    print('手动创建不需要-num，并且还需要-sp')
-                elif args.diskless:
-                    print('手动创建不需要-diskless')
-                else:
-                    print('手动创建还需要-sp')
-
-            elif args.storagepool:
-                if args.num:
-                    print('手动创建不需要-num,并且还需要-n')
-                elif args.diskless:
-                    print('手动创建不需要-diskless')
-                else:
-                    print('手动创建还需要-n')
-
+        def node_create():
+            if args.node and args.nodetype and args.ip:
+                la.linstor_create_node(args.node, args.ip, args.nodetype)
             else:
-                print('''请选择创建方式：
-                自动创建:-a -num NUM
-                手动创建:-n NODE -sp STORAGEPOOL
-                ''')
+                parser_create.print_help()
 
-        elif args.diskless:
-            if args.auto:
-                print('创建diskless不需要-a')
-            elif args.num:
-                print('创建diskless不需要-num')
-            elif args.storagepool:
-                print('创建diskless不需要-sp')
-            elif args.node:
-                la.linstor_create_res_diskless(args.node,args.resource)
+        def node_modify():
+            pass
+
+        def node_delete():
+            if args.node:
+                if la.confirm_del():
+                    la.linstor_delete_node(args.node)
             else:
-                print('创建diskless资源需要-n')
+                parser_delete.print_help()
+
+        def node_show():
+            tb = Process.Table_show()
+            tb.run()
+            if args.node:
+                tb.node_one(args.node)
+            else:
+                tb.node_all()
 
 
+        if self.args.node_sub in ['create','c']:
+            node_create()
+        elif self.args.node_sub in ['modify','m']:
+            node_modify()
+        elif self.args.node_sub in ['delete','d']:
+            node_delete()
+        elif self.args.node_sub in ['show','s']:
+            node_show()
         else:
-            parser.print_help()
-            print('E.g.')
-            print('自动创建：vtel stor create RESOURCE -s SIZE -a -num NUM')
-            print('手动创建：vtel stor create RESOURCE -s SIZE -n NODE -sp STORAGEPOOL')
-            print('创建diskless：vtel stor create RESOURCE -diskless NODE')
+            self.stor_node.print_help()
 
-    def stor_resource_modify(self):
+    def case_resource(self):
         args = self.args
-        parser_stor_modify = self.vtel_stor_resource_modify
+        parser_create = self.resource_create
+        parser_modify = self.resource_modify
+        parser_delete = self.resource_delete
 
-        if args.resource:
+
+        def resource_create():
             if args.size:
-                print('调整resource的size')
-            elif args.node and args.diskless:
-                print('将某节点上某个diskful的资源调整为diskless')
-
-            elif args.node and args.storagepool:
-                print('将某节点上某个diskless的资源调整为diskful')
-        else:
-            parser_stor_modify.print_help()
-
-    def stor_resource_delete(self):
-        args = self.args
-        parser_stor_delete = self.vtel_stor_resource_delete
-
-
-        if args.resource:
-            if args.node:
-                if args.yes:
-                    la.linstor_delete_resource_des(args.node,args.resource)
+                if all([args.auto, args.num]) and not any([args.node, args.storagepool, args.diskless]):
+                    la.linstor_create_res_auto(args.resource, args.size, args.num)
+                elif all([args.node, args.storagepool]) and not any([args.auto, args.num, args.diskless]):
+                    la.linstor_create_res_manual(args.resource, args.size, args.node, args.storagepool)
                 else:
-                    if la.confirm_del():
-                        la.linstor_delete_resource_des(args.node,args.resource)
-
-            elif not args.node:
-                if args.yes:
-                    la.linstor_delete_resource_all(args.resource)
+                    parser_create.print_help()
+            elif args.diskless:
+                if args.node and not any([args.auto, args.num, args.storagepool]):
+                    la.linstor_create_res_diskless(args.node, args.resource)
                 else:
-                    if la.confirm_del():
+                    parser_create.print_help()
+            else:
+                parser_create.print_help()
+
+            #     print('E.g.')
+            #     print('自动创建：vtel stor create RESOURCE -s SIZE -a -num NUM')
+            #     print('手动创建：vtel stor create RESOURCE -s SIZE -n NODE -sp STORAGEPOOL')
+            #     print('创建diskless：vtel stor create RESOURCE -diskless NODE')
+
+        def resource_modify():
+            if args.resource:
+                if args.size:
+                    print('调整resource的size')
+                elif args.node and args.diskless:
+                    print('将某节点上某个diskful的资源调整为diskless')
+
+                elif args.node and args.storagepool:
+                    print('将某节点上某个diskless的资源调整为diskful')
+            else:
+                parser_modify.print_help()
+
+        def resource_delete():
+            if args.resource:
+                if args.node:
+                    if args.yes:
+                        la.linstor_delete_resource_des(args.node, args.resource)
+                    else:
+                        if la.confirm_del():
+                            la.linstor_delete_resource_des(args.node, args.resource)
+                elif not args.node:
+                    if args.yes:
                         la.linstor_delete_resource_all(args.resource)
-                    # else:
-                    #     print('Operation canceled')
-        else:
-            parser_stor_delete.print_help()
-
-    def stor_resource_show(self):
-        args = self.args
-        tb = Process.Table_show()
-        tb.run()
-        if args.resource:
-            tb.resource_one(args.resource)
-        else:
-            tb.resource_all()
-
-
-    def stor_storagepool_create(self):
-        args = self.args
-        parser = self.vtel_stor_storagepool_create
-
-        if args.storagepool and args.node:
-            if args.lvm:
-                la.linstor_create_storagepool_lvm(args.node,args.storagepool,args.lvm)
-            elif args.tlv:
-                la.linstor_create_storagepool_thinlv(args.node,args.storagepool,args.tlv)
+                    else:
+                        if la.confirm_del():
+                            la.linstor_delete_resource_all(args.resource)
             else:
-                print('缺少指定lvm/thin lv')
+                parser_delete.print_help()
+
+        def resource_show():
+            tb = Process.Table_show()
+            tb.run()
+            if args.resource:
+                tb.resource_one(args.resource)
+            else:
+                tb.resource_all()
+
+        if args.resource_sub in ['create','c']:
+            resource_create()
+        elif args.resource_sub == ['modify','m']:
+            resource_modify()
+        elif args.resource_sub == ['delete','d']:
+            resource_delete()
+        elif args.resource_sub == ['show','s']:
+            resource_show()
         else:
-            parser.print_help()
+            self.stor_resource.print_help()
 
-
-    def stor_storagepool_modify(self):
-        pass
-
-    def stor_storagepool_delete(self):
+    def case_storagepool(self):
         args = self.args
-        parser = self.vtel_stor_storagepool_delete
+        parser_create = self.storagepool_create
+        parser_modify = self.storagepool_modify
+        parser_delete = self.storagepool_delete
 
-        if args.storagepool:
-            if args.node:
-                if args.yes:
-                    la.linstor_delete_storagepool(args.node,args.storagepool)
+        def storagepool_create():
+            if args.storagepool and args.node:
+                if args.lvm:
+                    la.linstor_create_storagepool_lvm(args.node, args.storagepool, args.lvm)
+                elif args.tlv:
+                    la.linstor_create_storagepool_thinlv(args.node, args.storagepool, args.tlv)
                 else:
-                    if la.confirm_del():
-                        la.linstor_delete_storagepool(args.node,args.storagepool)
+                    parser_create.print_help()
             else:
-                print('缺少指定节点 -n')
-        # elif args.node:
-        #     if args.storagepool:
-        #         if args.yes:
-        #             print('直接删除指定节点的指定存储池')
-        #         else:
-        #             print('删除指定节点的指定存储池')
-        #             LC.LINSTOR_action.confirm_res_del()
-        #     else:
-        #         print('缺少指定存储池 -sp')
+                parser_create.print_help()
+
+
+        def storagepool_modify():
+            pass
+
+
+        def storagepool_delete():
+            if args.storagepool:
+                if args.node:
+                    if args.yes:
+                        la.linstor_delete_storagepool(args.node, args.storagepool)
+                    else:
+                        if la.confirm_del():
+                            la.linstor_delete_storagepool(args.node, args.storagepool)
+                else:
+                    parser_delete.print_help()
+            else:
+                parser_delete.print_help()
+
+        def storagepool_show():
+            tb = Process.Table_show()
+            tb.run()
+            if args.storagepool:
+                tb.storagepool_one(args.storagepool)
+            else:
+                tb.storagepool_all()
+
+
+        if args.storagepool_sub in ['create','c']:
+            storagepool_create()
+        elif args.storagepool_sub in ['modify','m']:
+            storagepool_modify()
+        elif args.storagepool_sub in ['delete','d']:
+            storagepool_delete()
+        elif args.storagepool_sub in ['show','s']:
+            storagepool_show()
         else:
-            parser.print_help()
+            self.stor_storagepool.print_help()
 
-
-
-
-    def stor_storagepool_show(self):
+    #pass
+    def case_snap(self):
         args = self.args
-        tb = Process.Table_show()
-        tb.run()
-        if args.storagepool:
-            tb.storagepool_one(args.storagepool)
+        parser = self.storagepool_create
+
+        def snap_create():
+            args = self.args
+            parser = self.storagepool_create
+
+            if args.storagepool and args.node:
+                if args.lvm:
+                    la.linstor_create_storagepool_lvm(args.node, args.storagepool, args.lvm)
+                elif args.tlv:
+                    la.linstor_create_storagepool_thinlv(args.node, args.storagepool, args.tlv)
+            else:
+                parser.print_help()
+
+        def snap_modify():
+            pass
+
+        def snap_delete():
+            pass
+
+        def snap_show():
+            pass
+
+
+        if self.args.snap_sub == 'create':
+            snap_create()
+        elif self.args.snap_sub == 'modify':
+            snap_modify()
+        elif self.args.snap_sub == 'delete':
+            snap_delete()
+        elif self.args.snap_sub == 'show':
+            snap_show()
         else:
-            tb.storagepool_all()
-
-
-    def stor_snap_create(self):
-        args = self.args
-        parser = self.vtel_stor_storagepool_create
-
-        if args.storagepool and args.node:
-            if args.lvm:
-                la.linstor_create_storagepool_lvm(args.node,args.storagepool,args.lvm)
-            elif args.tlv:
-                la.linstor_create_storagepool_thinlv(args.node,args.storagepool,args.tlv)
-        else:
-            parser.print_help()
-
-
-    def stor_snap_modify(self):
-        pass
-
-    def stor_snap_delete(self):
-        pass
-
-    def stor_snap_show(self):
-        pass
-
-
-    def iscsi_show(self):
-        args = self.args
-        parser_iscsi_show = self.vtel_iscsi_show
-
-        if args.host == '-h':
-            print('all host')
-        elif args.host:
-            print('one host')
-
-        elif args.host_group == '-hg':
-            print('all host group')
-        elif args.host_group:
-            print('one host group')
-
-        elif args.resource == '-r':
-            print('all resource')
-        elif args.resource:
-            print('one resource')
-
-        elif args.resource_group == '-rg':
-            print('all resource group')
-        elif args.resource_group:
-            print('one resource group')
-
-        elif args.member == '-m':
-            print('all member')
-        elif args.member:
-            print('one member')
-        else:
-            parser_iscsi_show.print_help()
-
-
-
-    def judge_node(self):
-
-        if self.args.node_next == 'create':
-            self.stor_node_create()
-        elif self.args.node_next == 'modify':
-            self.stor_node_modify()
-        elif self.args.node_next == 'delete':
-            self.stor_node_delete()
-        elif self.args.node_next == 'show':
-            self.stor_node_show()
-        else:
-            self.vtel_stor_node.print_help()
-
-    def judge_resource(self):
-        if self.args.resource_next == 'create':
-            self.stor_resource_create()
-        elif self.args.resource_next == 'modify':
-            self.stor_resource_modify()
-        elif self.args.resource_next == 'delete':
-            self.stor_resource_delete()
-        elif self.args.resource_next == 'show':
-            self.stor_resource_show()
-        else:
-            self.vtel_stor_resource.print_help()
-
-
-    def judge_storagepool(self):
-        if self.args.storagepool_next == 'create':
-            self.stor_storagepool_create()
-        elif self.args.storagepool_next == 'modify':
-            self.stor_storagepool_modify()
-        elif self.args.storagepool_next == 'delete':
-            self.stor_storagepool_delete()
-        elif self.args.storagepool_next == 'show':
-            self.stor_storagepool_show()
-        else:
-            self.vtel_stor_storagepool.print_help()
-
-    def judge_snap(self):
-        if self.args.snap_next == 'create':
-            self.stor_snap_create()
-        elif self.args.snap_next == 'modify':
-            self.stor_snap_modify()
-        elif self.args.snap_next == 'delete':
-            self.stor_snap_delete()
-        elif self.args.snap_next == 'show':
-            self.stor_snap_show()
-        else:
-            self.vtel_stor_snap.print_help()
-
-
+            self.stor_snap.print_help()
 
 
     def judge(self):
-        if self.args.vtel_next == 'stor':
-            if self.args.stor_next == 'node':
-                self.judge_node()
-            elif self.args.stor_next == 'resource':
-                self.judge_resource()
-            elif self.args.stor_next == 'storagepool':
-                self.judge_storagepool()
-            elif self.args.stor_next == 'snap':
-                self.judge_snap()
+        if self.args.vtel_sub == 'stor':
+            if self.args.stor_sub in ['node','n']:
+                self.case_node()
+            elif self.args.stor_sub in ['resource','r']:
+                self.case_resource()
+            elif self.args.stor_sub in ['storagepool','sp']:
+                self.case_storagepool()
+            elif self.args.stor_sub in ['snap','sn']:
+                self.case_snap()
             else:
                 self.vtel_stor.print_help()
 
         elif 'iscsi' in sys.argv:
             if 'show' in sys.argv:
-                self.iscsi_show()
+                pass
 
         else:
             self.vtel.print_help()
 
 if __name__ == '__main__':
-    args = CLI()
-    # if args.stor == 'create':
-    #     stor_create(args.resource, args.size, args.auto, args.num, args.node, args.storagepool, args.diskless)
-    # elif args.stor == 'show':
-    #     stor_show(args.node,args.resource,args.storagepool)
+    CLI()
 
