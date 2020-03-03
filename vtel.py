@@ -248,11 +248,11 @@ class CLI():
 
         if args.resource_sub in ['create','c']:
             resource_create()
-        elif args.resource_sub == ['modify','m']:
+        elif args.resource_sub in ['modify','m']:
             resource_modify()
-        elif args.resource_sub == ['delete','d']:
+        elif args.resource_sub in ['delete','d']:
             resource_delete()
-        elif args.resource_sub == ['show','s']:
+        elif args.resource_sub in ['show','s']:
             resource_show()
         else:
             self.stor_resource.print_help()
