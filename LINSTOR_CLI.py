@@ -57,12 +57,6 @@ class LINSTOR_action():
     def linstor_create_res_auto(res,size,num):
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
 
-        #格式判断
-        # if not reg.judge_name(res):
-        #     pass
-        # else:
-        #     print('')
-
         if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res,size):
             if reg.judge_num(str(num)):
                 action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -73,8 +67,6 @@ class LINSTOR_action():
                 elif reg.judge_cmd_result_err(str(result)):
                     LINSTOR_action.linstor_delete_rd(res)
                     print('Fail')
-                    # print('Cause:')
-                    # print(reg.get_err_mes(str(result)))
                     print(result.decode('utf-8'))
 
 
@@ -91,8 +83,6 @@ class LINSTOR_action():
             elif reg.judge_cmd_result_err(str(result)):
                 LINSTOR_action.linstor_delete_rd(res)
                 print('Fail')
-                # print('Cause:')
-                # print(reg.get_err_mes(str(result)))
                 print(result.decode('utf-8'))
 
 
@@ -105,8 +95,6 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -120,8 +108,9 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
+            print(result.decode('utf-8'))
+        elif reg.judge_cmd_result_war(str(result)):
+            print('Fail')
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -135,8 +124,9 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
+            print(result.decode('utf-8'))
+        elif reg.judge_cmd_result_war(str(result)):
+            print('Fail')
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -150,8 +140,6 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -165,8 +153,6 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -179,13 +165,14 @@ class LINSTOR_action():
         cmd = 'linstor storage-pool delete %s %s' %(node,stp)
         action = subprocess.run(cmd, shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         result = action.stdout
-        if reg.judge_cmd_result_suc(str(result)):
-            print('SUCCESS')
+        if reg.judge_cmd_result_err(str(result)):
+            print('Fail')
+            print(result.decode('utf-8'))
         elif reg.judge_cmd_result_war(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_cau_mes(str(result)))
             print(result.decode('utf-8'))
+        elif reg.judge_cmd_result_suc(str(result)):
+            print('SUCCESS')
 
 
     #创建集群节点
@@ -200,8 +187,9 @@ class LINSTOR_action():
             result = action.stdout
             if reg.judge_cmd_result_err(str(result)):
                 print('Fail')
-                # print('Cause:')
-                # print(reg.get_err_mes(str(result)))
+                print(result.decode('utf-8'))
+            elif reg.judge_cmd_result_war(str(result)):
+                print('Fail')
                 print(result.decode('utf-8'))
             elif reg.judge_cmd_result_suc(str(result)):
                 print('SUCCESS')
@@ -215,8 +203,9 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result)))
+            print(result.decode('utf-8'))
+        elif reg.judge_cmd_result_war(str(result)):
+            print('Fail')
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -232,6 +221,3 @@ class LINSTOR_action():
             return True
         else:
             return False
-
-
-

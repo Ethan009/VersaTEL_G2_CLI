@@ -1,7 +1,8 @@
 #coding:utf-8
 import sqlite3
-import GetLinstor as gi #修改
+import GetLinstor as gi
 import subprocess
+
 
 class LINSTORDB():
     #LINSTOR表
@@ -86,12 +87,13 @@ class LINSTORDB():
             )
         values(?,?,?,?,?)
     '''
-    #连接数据库
+    #连接数据库,创建光标对象
     def __init__(self):
-        self.con = sqlite3.connect("iscsi.db",check_same_thread=False)
+        self.con = sqlite3.connect("iscsi.db", check_same_thread=False)
         self.cur = self.con.cursor()
 
-    def rebuild_tb(self):
+    #执行获取数据，删除表，创建表，插入数据
+    def reb_tb(self):
         self.get_op()
         self.drop_tb()
         self.create_tb()
@@ -104,7 +106,6 @@ class LINSTORDB():
         self.info_storagepool = gi.GetLinstor(output_storagepool)
         self.info_resource = gi.GetLinstor(output_resource)
         self.info_node = gi.GetLinstor(output_node)
-
     #创建表
     def create_tb(self):
         self.cur.execute(self.crt_sptb_sql)#检查是否存在表，如不存在，则新创建表
@@ -112,7 +113,6 @@ class LINSTORDB():
         self.cur.execute(self.crt_ntb_sql)
         self.con.commit()
 
-    #delete table
     def drop_tb(self):
         drp_storagepooltb_sql = "drop table if exists storagepooltb"#sql语句
         drp_resourcetb_sql = "drop table if exists resourcetb"
@@ -122,7 +122,6 @@ class LINSTORDB():
         self.cur.execute(drp_nodetb_sql)
         self.con.commit()
 
-    #adding data to the table
     def rep_storagepooltb(self):
         for n, i in zip(range(len(self.info_storagepool.list_result))[1:], self.info_storagepool.list_result[1:]):
             id = n
@@ -141,16 +140,11 @@ class LINSTORDB():
             node, nodetype, addr, state = i
             self.cur.execute(self.replace_ntb_sql, (id, node, nodetype, addr, state))
 
-    def get_lun_name(self,device_name):
-        select_sql = "select Resource from resource where DeviceName = '"+device_name+"'"
-        self.cur.execute(select_sql)
-        date_set = self.cur.fetchone()
-        return list(date_set)
-
 
     def run_rep(self):
         self.rep_storagepooltb()
         self.rep_resourcetb()
         self.rep_nodetb()
         self.con.commit()
+
 

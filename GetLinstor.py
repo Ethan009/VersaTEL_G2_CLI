@@ -2,8 +2,6 @@
 import re
 import collections
 
-import pprint
-
 class GetLinstor():
     def __init__(self,info):
         self.info = info
@@ -79,3 +77,4 @@ class GetLinstor():
             if info_type in i.values():
                 n+=1
         return n
+
