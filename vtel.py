@@ -27,32 +27,32 @@ class CLI():
 
     def parser_stor(self):
         ##stor
-        sub_vtel_stor = self.vtel_stor.add_subparsers(dest='stor_sub')
-        self.stor_node = sub_vtel_stor.add_parser('node', aliases='n', help='Management operations for node')
-        self.stor_resource = sub_vtel_stor.add_parser('resource', aliases='r', help='Management operations for storagepool')
-        self.stor_storagepool = sub_vtel_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool')
-        self.stor_snap = sub_vtel_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
+        sub_stor = self.vtel_stor.add_subparsers(dest='stor_sub')
+        self.stor_node = sub_stor.add_parser('node', aliases='n', help='Management operations for node')
+        self.stor_resource = sub_stor.add_parser('resource', aliases='r', help='Management operations for storagepool')
+        self.stor_storagepool = sub_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool')
+        self.stor_snap = sub_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
 
         ###node
-        sub_stor_node = self.stor_node.add_subparsers(dest='node_sub')
-        self.node_create = sub_stor_node.add_parser('create', aliases='c', help='Create the node')
-        self.node_modify = sub_stor_node.add_parser('modify', aliases='m', help='Modify the node')
-        self.node_delete = sub_stor_node.add_parser('delete', aliases='d', help='Delete the node')
-        self.node_show = sub_stor_node.add_parser('show', aliases='s', help='Displays the node view')
+        sub_node = self.stor_node.add_subparsers(dest='node_sub')
+        self.node_create = sub_node.add_parser('create', aliases='c', help='Create the node')
+        self.node_modify = sub_node.add_parser('modify', aliases='m', help='Modify the node')
+        self.node_delete = sub_node.add_parser('delete', aliases='d', help='Delete the node')
+        self.node_show = sub_node.add_parser('show', aliases='s', help='Displays the node view')
 
         ###resource
-        stor_resource = self.stor_resource.add_subparsers(dest='resource_sub')
-        self.resource_create = stor_resource.add_parser('create', aliases='c', help='Create the resource')  # usage =
-        self.resource_modify = stor_resource.add_parser('modify', aliases='m',help='Modify the resource')
-        self.resource_delete = stor_resource.add_parser('delete', aliases='d',help='Delete the resource')
-        self.resource_show = stor_resource.add_parser('show', aliases='s', help='Displays the resource view')
+        sub_resource = self.stor_resource.add_subparsers(dest='resource_sub')
+        self.resource_create = sub_resource.add_parser('create', aliases='c', help='Create the resource')  # usage =
+        self.resource_modify = sub_resource.add_parser('modify', aliases='m',help='Modify the resource')
+        self.resource_delete = sub_resource.add_parser('delete', aliases='d',help='Delete the resource')
+        self.resource_show = sub_resource.add_parser('show', aliases='s', help='Displays the resource view')
 
         ###storagepool
-        sub_stor_storagepool = self.stor_storagepool.add_subparsers(dest='storagepool_sub')
-        self.storagepool_create = sub_stor_storagepool.add_parser('create', aliases='c',help='Create the storagpool')
-        self.storagepool_modify = sub_stor_storagepool.add_parser('modify', aliases='m',help='Modify the storagpool')
-        self.storagepool_delete = sub_stor_storagepool.add_parser('delete', aliases='d',help='Delete the storagpool')
-        self.storagepool_show = sub_stor_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view')
+        sub_storagepool = self.stor_storagepool.add_subparsers(dest='storagepool_sub')
+        self.storagepool_create = sub_storagepool.add_parser('create', aliases='c',help='Create the storagpool')
+        self.storagepool_modify = sub_storagepool.add_parser('modify', aliases='m',help='Modify the storagpool')
+        self.storagepool_delete = sub_storagepool.add_parser('delete', aliases='d',help='Delete the storagpool')
+        self.storagepool_show = sub_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view')
 
         ###snap
         sub_stor_snap = self.stor_snap.add_subparsers(dest='snap_sub')
@@ -69,42 +69,51 @@ class CLI():
         ###stor node modify
 
         ###stor node delete
-        self.node_delete.add_argument('node', action='store', help='node name')
+        self.node_delete.add_argument('node', metavar='NODE',action='store', help='node name')
+        self.node_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
+
 
         ###stor node show
-        self.node_show.add_argument('node', help='Show Node view', action='store', nargs='?', default=None)
+        self.node_show.add_argument('node', metavar='NODE',help='Show Node view', action='store', nargs='?', default=None)
 
         ###stor resource create
 
-        self.resource_create.add_argument('resource', action='store',help='define resource name to be created.')
+        self.resource_create.add_argument('resource', metavar='RESOURCE',action='store',help='define resource name to be created.')
         self.resource_create.add_argument('-s', dest='size', action='store',help='define resource size to be created.In addition to creating diskless resource, you must enter SIZE')
 
+        #自动创建在num个节点上
         group_auto = self.resource_create.add_argument_group(title='auto create')
         group_auto.add_argument('-a', dest='auto', action='store_true', default=False,help='choose to create automatically')
         group_auto.add_argument('-num', dest='num', action='store', help='specify the quantity', type=int)
 
+        #手动选择节点和存储池
         group_manual = self.resource_create.add_argument_group(title='manual create')
         group_manual.add_argument('-n', dest='node', action='store', help='specify the node of the resource')
         group_manual.add_argument('-sp', dest='storagepool', help='create storagepool')
 
+        #创建diskless
         group_manual_diskless = self.resource_create.add_argument_group(title='diskless create')
         group_manual_diskless.add_argument('-diskless', action='store_true', default=False, dest='diskless',help='diskless')
 
+        #创建mirror way，可用于自动创建和手动创建
+        group_add_mirror = self.resource_create.add_argument_group(title='add mirror way')
+        group_add_mirror.add_argument('-am',action='store_true', default=False, dest='add_mirror',help='add mirror')
+
         ###stor resource modify
-        self.resource_modify.add_argument('resource',action='store', help='resources to be modified')
+        self.resource_modify.add_argument('resource',metavar='RESOURCE',action='store', help='resources to be modified')
         self.resource_modify.add_argument('-n', dest='node', action='store', help='node to be modified')
         self.resource_modify.add_argument('-sp', dest='storagepool', action='store', help='Storagepool')
 
         ###stor resource delete
-        self.resource_delete.add_argument('resource', action='store', help='the resource to delete')
+        self.resource_delete.add_argument('resource',metavar='RESOURCE',action='store', help='the resource to delete')
         self.resource_delete.add_argument('-n', dest='node', action='store', help='the node to delete')
         self.resource_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
 
         ###stor resource show
-        self.resource_show.add_argument('resource', help='Show Resource view', action='store', nargs='?')
+        self.resource_show.add_argument('resource',metavar='RESOURCE',help='Show Resource view', action='store', nargs='?')
 
         ###stor storagepool create
-        self.storagepool_create.add_argument('storagepool', action='store', help='storagepool name')
+        self.storagepool_create.add_argument('storagepool', metavar='STORAGEPOOL',action='store', help='storagepool name')
         self.storagepool_create.add_argument('-n', dest='node', action='store', help='node name')
         group_type = self.storagepool_create.add_mutually_exclusive_group()
         group_type.add_argument('-lvm', dest='lvm', action='store', help='vg name')
@@ -113,12 +122,12 @@ class CLI():
         ###stor storagepool modify
 
         ###stor storagepool delete
-        self.storagepool_delete.add_argument('storagepool', help='storagepool name', action='store')
+        self.storagepool_delete.add_argument('storagepool',metavar='STORAGEPOOL',help='storagepool name', action='store')
         self.storagepool_delete.add_argument('-n', dest='node', action='store', help='node name')
         self.storagepool_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
 
         ###stor storgagepool show
-        self.storagepool_show.add_argument('storagepool', help='Show Storagepool view', action='store',nargs='?')
+        self.storagepool_show.add_argument('storagepool',metavar='STORAGEPOOL',help='Show Storagepool view', action='store',nargs='?')
 
         ###stor snap create
 
@@ -156,8 +165,11 @@ class CLI():
 
         def node_delete():
             if args.node:
-                if la.confirm_del():
+                if args.yes:
                     la.linstor_delete_node(args.node)
+                else:
+                    if la.confirm_del():
+                        la.linstor_delete_node(args.node)
             else:
                 parser_delete.print_help()
 
@@ -186,8 +198,14 @@ class CLI():
         parser_create = self.resource_create
         parser_modify = self.resource_modify
         parser_delete = self.resource_delete
-
-
+        """
+        resource create 使用帮助
+        自动创建：vtel stor create RESOURCE -s SIZE -a -num NUM
+        手动创建：vtel stor create RESOURCE -s SIZE -n NODE -sp STORAGEPOOL
+        创建diskless：vtel stor create RESOURCE -diskless NODE
+        添加mirror到其他节点(手动):vtel stor create RESOURCE -am -n NODE -sp STORAGEPOOL
+        添加mirror到其他节点(自动):vtel stor create RESOURCE -am -a -num NUM
+        """
         def resource_create():
             if args.size:
                 if all([args.auto, args.num]) and not any([args.node, args.storagepool, args.diskless]):
@@ -201,13 +219,18 @@ class CLI():
                     la.linstor_create_res_diskless(args.node, args.resource)
                 else:
                     parser_create.print_help()
+
+            elif args.add_mirror:
+                if all([args.node,args.storagepool]) and not any([args.auto, args.num, args.diskless,args.size]):
+                    print('手动添加mirror')
+                #
+                # elif all([args.auto,args.num]) and not any([])
+
+
             else:
                 parser_create.print_help()
 
-            #     print('E.g.')
-            #     print('自动创建：vtel stor create RESOURCE -s SIZE -a -num NUM')
-            #     print('手动创建：vtel stor create RESOURCE -s SIZE -n NODE -sp STORAGEPOOL')
-            #     print('创建diskless：vtel stor create RESOURCE -diskless NODE')
+
 
         def resource_modify():
             if args.resource:

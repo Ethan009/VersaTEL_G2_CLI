@@ -19,7 +19,6 @@ class LINSTOR_action():
     @staticmethod
     def linstor_create_rd(res):
         cmd_rd = 'linstor rd c %s' %res
-        #格式判断
 
         #执行
         action_c_rd = subprocess.run(cmd_rd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -30,8 +29,6 @@ class LINSTOR_action():
             return True
         elif reg.judge_cmd_result_err(str(result_rd)):
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result_rd)))
             print(result_rd.decode('utf-8'))
             return False
 
@@ -46,8 +43,6 @@ class LINSTOR_action():
         elif reg.judge_cmd_result_err(str(result_vd)):
             LINSTOR_action.linstor_delete_rd(res)
             print('Fail')
-            # print('Cause:')
-            # print(reg.get_err_mes(str(result_vd)))
             print(result_vd.decode('utf-8'))
             return False
 
