@@ -231,6 +231,8 @@ class Process_data():
 
 
 class Table_show():
+    table = pt.PrettyTable()
+
     def __init__(self):
         ca.init(autoreset=True)
 
@@ -239,10 +241,10 @@ class Table_show():
 
     def node_all(self):
         node_all_tb = pt.PrettyTable()
-        node_all_tb.field_names = ["node", "node type", "res num", "stp num", "addr", "status"]
+        self.table.field_names = ["node", "node type", "res num", "stp num", "addr", "status"]
         for i in self.pd.process_data_node_all():
-            node_all_tb.add_row(i)
-        print(node_all_tb)
+            self.table.add_row(i)
+        print(self.table)
 
     def node_one(self,node):
         node_one_tb = pt.PrettyTable()
@@ -305,6 +307,4 @@ class Table_show():
             node_name = ' and '.join(node_name)
             print('The storagepool name for %s nodes is %s,they are %s.'%(node_num,stp,node_name))
             print(stp_specific)
-
-
 

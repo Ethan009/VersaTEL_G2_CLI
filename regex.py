@@ -56,19 +56,3 @@ def get_err_mes_vd(cmd):
     re_mes_des = re.compile(r'(?<=Description:\\n)[\S\s]*(?=\\nDetails:)')
     if re_mes_des.search(cmd):
         return (re_mes_des.search(cmd).group())
-
-
-
-# cmd = (b'\x1b[1;31mERROR:\n\x1b[0mDescription:\n    Node: nodea, Storage pool name: p'
-#  b'ool_a already exists.\nCause:\n    The StorPool already exists\nDetails:\n  '
-#  b'  Node: nodea, Storage pool name: pool_a\nShow reports:\n    linstor error'
-#  b'-reports show 5E4CEC09-00000-000019\n')
-#
-#
-#
-# pprint.pprint(str(cmd))
-#
-# if get_cau_mes(str(cmd)):
-#     print(get_cau_mes(str(cmd)))
-# else:
-#     print('创建失败')

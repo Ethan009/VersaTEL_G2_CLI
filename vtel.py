@@ -5,6 +5,9 @@ import sys
 import Process
 from LINSTOR_CLI import LINSTOR_action as la
 
+class NodeLessThanSPError(Exception):
+    pass
+
 
 class CLI():
     def __init__(self):
@@ -55,11 +58,11 @@ class CLI():
         self.storagepool_show = sub_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view')
 
         ###snap
-        sub_stor_snap = self.stor_snap.add_subparsers(dest='snap_sub')
-        self.snap_create = sub_stor_snap.add_parser('create', help='Create the snapshot')
-        self.snap_modify = sub_stor_snap.add_parser('modify', help='Modify the snapshot')
-        self.snap_delete = sub_stor_snap.add_parser('delete', help='Delete the snapshot')
-        self.snap_show = sub_stor_snap.add_parser('show', help='Displays the snapshot view')
+        sub_snap = self.stor_snap.add_subparsers(dest='snap_sub')
+        self.snap_create = sub_snap.add_parser('create', help='Create the snapshot')
+        self.snap_modify = sub_snap.add_parser('modify', help='Modify the snapshot')
+        self.snap_delete = sub_snap.add_parser('delete', help='Delete the snapshot')
+        self.snap_show = sub_snap.add_parser('show', help='Displays the snapshot view')
 
         ###stor node create
         self.node_create.add_argument('node', metavar='NODE', action='store', help='node name')
@@ -88,8 +91,8 @@ class CLI():
 
         #手动选择节点和存储池
         group_manual = self.resource_create.add_argument_group(title='manual create')
-        group_manual.add_argument('-n', dest='node', action='store', help='specify the node of the resource')
-        group_manual.add_argument('-sp', dest='storagepool', help='create storagepool')
+        group_manual.add_argument('-n', dest='node', action='store', nargs='+',help='specify the node of the resource')
+        group_manual.add_argument('-sp', dest='storagepool',nargs='+', help='The number of storagepool must be less than the number of node')
 
         #创建diskless
         group_manual_diskless = self.resource_create.add_argument_group(title='diskless create')
@@ -125,6 +128,7 @@ class CLI():
         self.storagepool_delete.add_argument('storagepool',metavar='STORAGEPOOL',help='storagepool name', action='store')
         self.storagepool_delete.add_argument('-n', dest='node', action='store', help='node name')
         self.storagepool_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
+
 
         ###stor storgagepool show
         self.storagepool_show.add_argument('storagepool',metavar='STORAGEPOOL',help='Show Storagepool view', action='store',nargs='?')
@@ -164,22 +168,31 @@ class CLI():
             pass
 
         def node_delete():
-            if args.node:
+            def _delete_comfirm():#命名，是否删除
+                if la.confirm_del():
+                    la.linstor_delete_node(args.node)
+                else:
+                    print('Delete canceled')
+
+            def _skip_confirm():#是否跳过确认
                 if args.yes:
                     la.linstor_delete_node(args.node)
                 else:
-                    if la.confirm_del():
-                        la.linstor_delete_node(args.node)
-            else:
-                parser_delete.print_help()
+                    _delete_comfirm()
+
+            _skip_confirm() if args.node else parser_delete.print_help()
+
 
         def node_show():
             tb = Process.Table_show()
             tb.run()
-            if args.node:
-                tb.node_one(args.node)
-            else:
-                tb.node_all()
+            tb.node_one(args.node) if args.node else tb.node_all() #简单的结构使用三元表达式行不行
+
+            # if args.node:
+            #     tb.node_one(args.node)
+            # else:
+            #     tb.node_all()
+
 
 
         if self.args.node_sub in ['create','c']:
@@ -207,25 +220,121 @@ class CLI():
         添加mirror到其他节点(自动):vtel stor create RESOURCE -am -a -num NUM
         """
         def resource_create():
+            def is_args_correct():
+                if len(args.node) >= len(args.storagepool):
+                    return True
+
+
+        #     list_auto_required = [args.auto, args.num]
+        #     list_manual_required = [args.node, args.storagepool]
+        #
+        #
+        #     #指定node和storagepool数量的规范判断，符合则继续执行
+        #     def is_args_correct():
+        #         if len(args.node) < len(args.storagepool):
+        #             raise NodeLessThanSPError('storagepool ore than node')
+        #
+        #     def create_normal_resource():
+        #         #创建正常的resource禁止输入的参数
+        #         list_normal_forbid = [args.diskless, args.add_mirror]
+        #         if not args.size:
+        #             return
+        #         if any(list_normal_forbid):
+        #             return
+        #         if all(list_auto_required) and not any(list_manual_required):
+        #             print('自动创建')
+        #             return True
+        #         elif all(list_manual_required) and not any(list_auto_required):
+        #             try:
+        #                 is_args_correct()
+        #             except NodeLessThanSPError:
+        #                 pass
+        #             else:
+        #                 print('手动添加mirror')
+        #                 return True
+        #
+        #
+        #     # 创建resource的diskless资源条件判断，符合则执行
+        #     def create_diskless_resource():
+        #         list_diskless_forbid = [args.auto, args.num, args.storagepool, args.add_mirror,args.size]
+        #         if not args.node:
+        #             return
+        #         if not any(list_diskless_forbid):
+        #             print('创建diskless')
+        #             return True
+        #
+        #     def add_resource_mirror():
+        #         # 创建正常的resource禁止输入的参数
+        #         list_add_mirror_forbid = [args.diskless, args.size]
+        #         if not args.add_mirror:
+        #             return
+        #         if any(list_add_mirror_forbid):
+        #             return
+        #         if all(list_auto_required) and not any(list_manual_required):
+        #             print('自动添加mirror')
+        #             return True
+        #         elif all(list_manual_required) and not any(list_auto_required):
+        #             try:
+        #                 is_args_correct()
+        #             except NodeLessThanSPError:
+        #                 pass
+        #             else:
+        #                 print('手动添加mirror')
+        #                 return True
+        #
+        #
+        #
+        #     if create_normal_resource():
+        #         pass
+        #     elif create_diskless_resource():
+        #         pass
+        #     elif add_resource_mirror():
+        #         pass
+        #     else:
+        #         parser_create.print_help()
+
+
+
+            list_auto_required = [args.auto, args.num]
+            list_auto_not_required = [args.node, args.storagepool, args.diskless,args.add_mirror]
+            list_manual_required = [args.node, args.storagepool]
+            list_manual_not_required = [args.auto, args.num, args.diskless,args.add_mirror]
+            list_diskless_not_required = [args.auto, args.num, args.storagepool,args.add_mirror]
+
+
             if args.size:
-                if all([args.auto, args.num]) and not any([args.node, args.storagepool, args.diskless]):
+                #自动创建条件判断，符合则执行
+                if all(list_auto_required) and not any(list_auto_not_required):
                     la.linstor_create_res_auto(args.resource, args.size, args.num)
-                elif all([args.node, args.storagepool]) and not any([args.auto, args.num, args.diskless]):
-                    la.linstor_create_res_manual(args.resource, args.size, args.node, args.storagepool)
+                #手动创建条件判断，符合则执行
+                elif all(list_manual_required) and not any(list_manual_not_required):
+                    if is_args_correct():
+                        la.linstor_create_res_manual(args.resource,args.size,args.node,args.storagepool)
+                    else:
+                        parser_create.print_help()
                 else:
                     parser_create.print_help()
+
+
             elif args.diskless:
-                if args.node and not any([args.auto, args.num, args.storagepool]):
+                # 创建resource的diskless资源条件判断，符合则执行
+                if args.node and not any(list_diskless_not_required):
                     la.linstor_create_res_diskless(args.node, args.resource)
                 else:
                     parser_create.print_help()
 
             elif args.add_mirror:
-                if all([args.node,args.storagepool]) and not any([args.auto, args.num, args.diskless,args.size]):
-                    print('手动添加mirror')
-                #
-                # elif all([args.auto,args.num]) and not any([])
-
+                #手动添加mirror条件判断，符合则执行
+                if all([args.node,args.storagepool]) and not any([args.auto, args.num]):
+                    if is_args_correct():
+                        la.add_mirror_manual(args.resource,args.node,args.storagepool)
+                    else:
+                        parser_create.print_help()
+                #自动添加mirror条件判断，符合则执行
+                elif all([args.auto,args.num]) and not any([args.node,args.storagepool]):
+                    la.add_mirror_auto(args.resource,args.num)
+                else:
+                    parser_create.print_help()
 
             else:
                 parser_create.print_help()
@@ -396,4 +505,3 @@ class CLI():
 
 if __name__ == '__main__':
     CLI()
-

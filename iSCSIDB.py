@@ -100,12 +100,14 @@ class LINSTORDB():
         self.run_rep()
 
     def get_op(self):
-        output_storagepool = subprocess.getoutput('linstor sp l')
-        output_resource = subprocess.getoutput('linstor r lv')
+        output_sp = subprocess.getoutput('linstor sp l')
+        output_res = subprocess.getoutput('linstor r lv')
         output_node = subprocess.getoutput('linstor n l')
-        self.info_storagepool = gi.GetLinstor(output_storagepool)
-        self.info_resource = gi.GetLinstor(output_resource)
+
+        self.info_storagepool = gi.GetLinstor(output_sp)
+        self.info_resource = gi.GetLinstor(output_res)
         self.info_node = gi.GetLinstor(output_node)
+
     #创建表
     def create_tb(self):
         self.cur.execute(self.crt_sptb_sql)#检查是否存在表，如不存在，则新创建表
@@ -146,5 +148,4 @@ class LINSTORDB():
         self.rep_resourcetb()
         self.rep_nodetb()
         self.con.commit()
-
 

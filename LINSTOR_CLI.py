@@ -2,7 +2,24 @@
 import subprocess
 import regex as reg
 
+
+
+def execute_cmd(cmd):
+    action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = action.stdout
+    if reg.judge_cmd_result_err(str(result)):
+        print(result.decode('utf-8'))
+    elif reg.judge_cmd_result_war(str(result)):
+        print(result.decode('utf-8'))
+    elif reg.judge_cmd_result_suc(str(result)):
+        return True
+
+
+
+
+
 class LINSTOR_action():
+
 
     #创建resource相关 -- ok
     @staticmethod
@@ -19,66 +36,108 @@ class LINSTOR_action():
     @staticmethod
     def linstor_create_rd(res):
         cmd_rd = 'linstor rd c %s' %res
-
-        #执行
-        action_c_rd = subprocess.run(cmd_rd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        result_rd = action_c_rd.stdout
-
-        #结果判断
-        if reg.judge_cmd_result_suc(str(result_rd)):
-            return True
-        elif reg.judge_cmd_result_err(str(result_rd)):
-            print('Fail')
-            print(result_rd.decode('utf-8'))
-            return False
+        return execute_cmd(cmd_rd)
 
     @staticmethod
     def linstor_create_vd(res,size):
         cmd_vd = 'linstor vd c %s %s' % (res, size)
-        action_c_vd = subprocess.run(cmd_vd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        result_vd = action_c_vd.stdout
-
-        if reg.judge_cmd_result_suc(str(result_vd)):
+        if execute_cmd(cmd_vd):
             return True
-        elif reg.judge_cmd_result_err(str(result_vd)):
+        else:
             LINSTOR_action.linstor_delete_rd(res)
-            print('Fail')
-            print(result_vd.decode('utf-8'))
-            return False
-
 
     #创建resource 自动
     @staticmethod
     def linstor_create_res_auto(res,size,num):
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
-
         if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res,size):
-            if reg.judge_num(str(num)):
-                action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                result = action.stdout
-                if reg.judge_cmd_result_suc(str(result)):
-                    print('SUCCESS')
-                    return True
-                elif reg.judge_cmd_result_err(str(result)):
-                    LINSTOR_action.linstor_delete_rd(res)
-                    print('Fail')
-                    print(result.decode('utf-8'))
-
+            if execute_cmd(cmd):
+                print('SUCESS')
+            else:
+                LINSTOR_action.linstor_delete_rd(res)
 
 
     #创建resource 手动
     @staticmethod
     def linstor_create_res_manual(res,size,node,stp):
-        cmd = 'linstor resource create %s %s --storage-pool %s' %(node,res,stp)
-        if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res,size):
+        flag = 0
+
+        def whether_delete_rd():
+            if flag == len(node):
+                LINSTOR_action.linstor_delete_rd(res)
+
+
+        def create_resource():
+            if execute_cmd(cmd):
+                print('Resource %s was successfully created on Node %s'%(res,node_one))
+            else:
+                return flag+1
+
+
+        if len(stp) == 1:
+            if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res, size):
+                for node_one in node:
+                    cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
+                    print (cmd)
+                    create_resource()
+                    whether_delete_rd()
+        elif len(node) == len(stp):
+            if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res, size):
+                for node_one,stp_one in zip(node,stp):
+                    cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
+                    create_resource()
+                    whether_delete_rd()
+
+
+        # if LINSTOR_action.linstor_create_rd(res) and LINSTOR_action.linstor_create_vd(res,size):
+            # action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # result = action.stdout
+            # if reg.judge_cmd_result_suc(str(result)):
+            #     print('SUCCESS')
+            # elif reg.judge_cmd_result_err(str(result)):
+            #     LINSTOR_action.linstor_delete_rd(res)
+            #     print('Fail')
+            #     print(result.decode('utf-8'))
+
+
+
+    #添加mirror（自动）
+    @staticmethod
+    def add_mirror_auto(res,num):
+        cmd = 'linstor r c %s --auto-place %d' % (res, num)
+        action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        result = action.stdout
+        if reg.judge_cmd_result_err(str(result)):
+            print('Fail')
+            print(result.decode('utf-8'))
+        elif reg.judge_cmd_result_suc(str(result)):
+            print('SUCCESS')
+            return True
+
+    @staticmethod
+    def add_mirror_manual(res,node,stp):
+        def add_mirror():
             action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             result = action.stdout
             if reg.judge_cmd_result_suc(str(result)):
-                print('SUCCESS')
+                print('Resource %s was successfully created on Node %s') %(res,node_one)
             elif reg.judge_cmd_result_err(str(result)):
-                LINSTOR_action.linstor_delete_rd(res)
                 print('Fail')
                 print(result.decode('utf-8'))
+
+
+        if len(stp) == 1:
+            for node_one in node:
+                cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
+                print(cmd)
+                add_mirror()
+        elif len(node) == len(stp):
+            for node_one,stp_one in zip(node,stp):
+                cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
+                print(cmd)
+                add_mirror()
+        else:
+            print('sp数量为1或者与node相等')
 
 
 
@@ -90,6 +149,8 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
+            # print('Cause:')
+            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -103,6 +164,8 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
+            # print('Cause:')
+            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_war(str(result)):
             print('Fail')
@@ -119,6 +182,8 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
+            # print('Cause:')
+            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_war(str(result)):
             print('Fail')
@@ -135,6 +200,8 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
+            # print('Cause:')
+            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -148,6 +215,8 @@ class LINSTOR_action():
         result = action.stdout
         if reg.judge_cmd_result_err(str(result)):
             print('Fail')
+            # print('Cause:')
+            # print(reg.get_err_mes(str(result)))
             print(result.decode('utf-8'))
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
@@ -205,14 +274,17 @@ class LINSTOR_action():
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
             return True
-
+        else:
+            print(result.decode('utf-8'))
 
     #确认删除函数
     @staticmethod
     def confirm_del():
-        print('Are you sure？y/n')
+        print('Are you sure you want to delete it? If yes, enter \'y/yes\'')
         answer = input()
         if answer in ['y','yes']:
             return True
         else:
             return False
+
+
