@@ -1,9 +1,7 @@
 #conding:utf-8
 import re
-import pprint
 
 #for diskgroup
-
 def judge_name(name):
     re_dg = re.compile('^[a-zA-Z][a-zA-Z0-9_-]*$')
     if re_dg.match(name):
@@ -11,7 +9,7 @@ def judge_name(name):
 
 
 def judge_size(size):
-    re_size = re.compile('^[1-9][0-9.]*([KkMmGgTtPp]?(iB|B)?)$')
+    re_size = re.compile('^[1-9][0-9.]*([KkMmGgTtPpB](iB|B)?)$')
     if re_size.match(size):
         return size
 
@@ -56,3 +54,17 @@ def get_err_mes_vd(cmd):
     re_mes_des = re.compile(r'(?<=Description:\\n)[\S\s]*(?=\\nDetails:)')
     if re_mes_des.search(cmd):
         return (re_mes_des.search(cmd).group())
+
+
+def get_err_not_vg(result,node,vg):
+    re_ = re.compile(r'\(Node: \''+node+'\'\) Volume group \''+vg+'\' not found')
+    if re_.search(result):
+        return (re_.search(result).group())
+
+
+
+def get_war_mes(result):
+    re_ = re.compile(r'\x1b\[1;33mWARNING:\n\x1b(?:.*\s*)+\n$')
+    if re_.search(result):
+        return (re_.search(result).group())
+
