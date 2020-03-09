@@ -322,5 +322,5 @@ class JSON_Operation:
 
 if __name__ == '__main__':
 	args = CLI()
-	print(args.args)
+	# print(args.args)
 	
