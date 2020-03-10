@@ -3,6 +3,7 @@ import sqlite3
 import GetLinstor as gi
 import colorama as ca
 import functools
+import subprocess
 
 
 class LINSTORDB():
@@ -101,46 +102,9 @@ class LINSTORDB():
         self.run_rep()
 
     def get_output(self):
-        # output_sp = subprocess.getoutput('linstor sp l')
-        # output_res = subprocess.getoutput('linstor r lv')
-        # output_node = subprocess.getoutput('linstor n l')
-
-        output_sp = '''+-------------------------------------------------------------------------------------------------------+
-| StoragePool | Node  | Driver   | PoolName  | FreeCapacity | TotalCapacity | SupportsSnapshots | State |
-|=======================================================================================================|
-| pool_hdd    | klay1 | LVM      | linstor1  |    19.68 GiB |     29.99 GiB | False             | Ok    |
-| pool_hdd    | klay2 | LVM      | linstor2  |     9.70 GiB |     20.00 GiB | False             | Ok    |
-| poollvt     | klay1 | LVM_THIN | vg1/lvol1 |     2.49 GiB |      2.49 GiB | True              | Ok    |
-| poolvg1     | klay1 | LVM      | vg1       |     2.25 GiB |      5.00 GiB | False             | Ok    |
-+-------------------------------------------------------------------------------------------------------+'''
-
-        output_res = '''+---------------------------------------------------------------------------------------------------------------+
-| Node  | Resource  | StoragePool          | VolumeNr | MinorNr | DeviceName    | Allocated | InUse  |    State |
-|===============================================================================================================|
-| klay1 | apple     | pool_hdd             | 0        | 1000    | /dev/drbd1000 | 12 MiB    | InUse  | UpToDate |
-| klay1 | banana    | pool_hdd             | 0        | 1001    | /dev/drbd1001 | 12 MiB    | InUse  | UpToDate |
-| klay2 | banana    | pool_hdd             | 0        | 1001    | /dev/drbd1001 | 12 MiB    | Unused | UpToDate |
-| klay1 | ben       | pool_hdd             | 0        | 1005    | /dev/drbd1005 | 12 MiB    | InUse  | UpToDate |
-| klay2 | ben       | pool_hdd             | 0        | 1005    | /dev/drbd1005 | 12 MiB    | Unused | UpToDate |
-| klay2 | ddfl      | DfltDisklessStorPool | 0        | 1008    | /dev/drbd1008 |           | Unused | Diskless |
-| klay1 | fred      | pool_hdd             | 0        | 1003    | /dev/drbd1003 | 12 MiB    | InUse  | UpToDate |
-| klay2 | fred      | pool_hdd             | 0        | 1003    | /dev/drbd1003 | 12 MiB    | Unused | UpToDate |
-| klay1 | linstordb | pool_hdd             | 0        | 1002    | /dev/drbd1002 | 252 MiB   | InUse  | UpToDate |
-| klay2 | linstordb | pool_hdd             | 0        | 1002    | /dev/drbd1002 | 252 MiB   | Unused | UpToDate |
-| klay1 | seven     | pool_hdd             | 0        | 1006    | /dev/drbd1006 | 12 MiB    | InUse  | UpToDate |
-| klay2 | seven     | pool_hdd             | 0        | 1006    | /dev/drbd1006 | 12 MiB    | Unused | UpToDate |
-| klay1 | ssss      | pool_hdd             | 0        | 1009    | /dev/drbd1009 | 12 MiB    | Unused | UpToDate |
-| klay1 | test      | pool_hdd             | 0        | 1004    | /dev/drbd1004 | 10.00 GiB | InUse  | UpToDate |
-| klay2 | test      | pool_hdd             | 0        | 1004    | /dev/drbd1004 | 10.00 GiB | Unused | UpToDate |
-+---------------------------------------------------------------------------------------------------------------+'''
-
-        output_node = '''+------------------------------------------------------+
-| Node  | NodeType | Addresses                | State  |
-|======================================================|
-| klay1 | COMBINED | 10.203.2.89:3366 (PLAIN) | Online |
-| klay2 | COMBINED | 10.203.2.90:3366 (PLAIN) | Online |
-+------------------------------------------------------+
-        '''
+        output_sp = subprocess.getoutput('linstor sp l')
+        output_res = subprocess.getoutput('linstor r lv')
+        output_node = subprocess.getoutput('linstor n l')
         self.info_storagepool = gi.GetLinstor(output_sp)
         self.info_resource = gi.GetLinstor(output_res)
         self.info_node = gi.GetLinstor(output_node)

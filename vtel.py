@@ -4,6 +4,7 @@ import argparse
 import sys
 import view
 from stor_cmds import Action as stor_action
+import usage
 
 #多节点创建resource时，storapoo多于node的异常类
 class NodeLessThanSPError(Exception):
@@ -20,11 +21,11 @@ class CLI():
 
 
     def parser_vtel(self):
-        self.vtel = argparse.ArgumentParser(prog='vtel',formatter_class=argparse.RawTextHelpFormatter, add_help=False)
+        self.vtel = argparse.ArgumentParser(prog='vtel',add_help=False)
         sub_vtel = self.vtel.add_subparsers(dest='vtel_sub')
 
         # add all sub parse
-        self.vtel_stor = sub_vtel.add_parser('stor',help='Management operations for LINSTOR',add_help=False)
+        self.vtel_stor = sub_vtel.add_parser('stor',help='Management operations for LINSTOR',add_help=False,usage=usage.stor)
         self.vtel_iscsi = sub_vtel.add_parser('iscsi',help='Management operations for iSCSI',add_help=False)
         self.vtel_fc = sub_vtel.add_parser('fc',help='for fc resource management...',add_help=False)
         self.vtel_ceph = sub_vtel.add_parser('ceph',help='for ceph resource management...',add_help=False)
@@ -32,31 +33,31 @@ class CLI():
     def parser_stor(self):
         ##stor
         sub_stor = self.vtel_stor.add_subparsers(dest='stor_sub')
-        self.stor_node = sub_stor.add_parser('node', aliases='n', help='Management operations for node')
-        self.stor_resource = sub_stor.add_parser('resource', aliases='r', help='Management operations for storagepool')
-        self.stor_storagepool = sub_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool')
+        self.stor_node = sub_stor.add_parser('node', aliases='n', help='Management operations for node',usage=usage.node)
+        self.stor_resource = sub_stor.add_parser('resource', aliases='r', help='Management operations for storagepool',usage=usage.resource)
+        self.stor_storagepool = sub_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool',usage=usage.storagepool)
         self.stor_snap = sub_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
 
         ###node
         sub_node = self.stor_node.add_subparsers(dest='node_sub')
-        self.node_create = sub_node.add_parser('create', aliases='c', help='Create the node')
-        self.node_modify = sub_node.add_parser('modify', aliases='m', help='Modify the node')
-        self.node_delete = sub_node.add_parser('delete', aliases='d', help='Delete the node')
-        self.node_show = sub_node.add_parser('show', aliases='s', help='Displays the node view')
+        self.node_create = sub_node.add_parser('create', aliases='c', help='Create the node',usage=usage.node_create)
+        self.node_modify = sub_node.add_parser('modify', aliases='m', help='Modify the node',usage=usage.node_modify)
+        self.node_delete = sub_node.add_parser('delete', aliases='d', help='Delete the node',usage=usage.node_delete)
+        self.node_show = sub_node.add_parser('show', aliases='s', help='Displays the node view',usage=usage.node_show)
 
         ###resource
         sub_resource = self.stor_resource.add_subparsers(dest='resource_sub')
-        self.resource_create = sub_resource.add_parser('create', aliases='c', help='Create the resource')  # usage =
-        self.resource_modify = sub_resource.add_parser('modify', aliases='m',help='Modify the resource')
-        self.resource_delete = sub_resource.add_parser('delete', aliases='d',help='Delete the resource')
-        self.resource_show = sub_resource.add_parser('show', aliases='s', help='Displays the resource view')
+        self.resource_create = sub_resource.add_parser('create', aliases='c', help='Create the resource',usage=usage.resource_create)
+        self.resource_modify = sub_resource.add_parser('modify', aliases='m',help='Modify the resource',usage=usage.resource_modify)
+        self.resource_delete = sub_resource.add_parser('delete', aliases='d',help='Delete the resource',usage=usage.resource_delete)
+        self.resource_show = sub_resource.add_parser('show', aliases='s', help='Displays the resource view',usage=usage.resource_show)
 
         ###storagepool
         sub_storagepool = self.stor_storagepool.add_subparsers(dest='storagepool_sub')
-        self.storagepool_create = sub_storagepool.add_parser('create', aliases='c',help='Create the storagpool')
-        self.storagepool_modify = sub_storagepool.add_parser('modify', aliases='m',help='Modify the storagpool')
-        self.storagepool_delete = sub_storagepool.add_parser('delete', aliases='d',help='Delete the storagpool')
-        self.storagepool_show = sub_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view')
+        self.storagepool_create = sub_storagepool.add_parser('create', aliases='c',help='Create the storagpool',usage=usage.storagepool_create)
+        self.storagepool_modify = sub_storagepool.add_parser('modify', aliases='m',help='Modify the storagpool',usage=usage.storagepool_modify)
+        self.storagepool_delete = sub_storagepool.add_parser('delete', aliases='d',help='Delete the storagpool',usage=usage.storagepool_delete)
+        self.storagepool_show = sub_storagepool.add_parser('show', aliases='s',help='Displays the storagpool view',usage=usage.storagepool_show)
 
         ###snap
         sub_snap = self.stor_snap.add_subparsers(dest='snap_sub')
@@ -118,7 +119,7 @@ class CLI():
 
         ###stor storagepool create
         self.storagepool_create.add_argument('storagepool', metavar='STORAGEPOOL',action='store', help='storagepool name')
-        self.storagepool_create.add_argument('-n', dest='node', action='store', help='node name')
+        self.storagepool_create.add_argument('-n', dest='node', action='store', help='node name',required=True)
         group_type = self.storagepool_create.add_mutually_exclusive_group()
         group_type.add_argument('-lvm', dest='lvm', action='store', help='vg name')
         group_type.add_argument('-tlv', dest='tlv', action='store', help='thinlv name')
@@ -127,7 +128,7 @@ class CLI():
 
         ###stor storagepool delete
         self.storagepool_delete.add_argument('storagepool',metavar='STORAGEPOOL',help='storagepool name', action='store')
-        self.storagepool_delete.add_argument('-n', dest='node', action='store', help='node name')
+        self.storagepool_delete.add_argument('-n', dest='node', action='store', help='node name',required=True)
         self.storagepool_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
 
 

@@ -8,7 +8,7 @@ def execute_cmd(cmd):
     action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = action.stdout
     if reg.judge_cmd_result_war(str(result)):
-        print(reg.get_war_mes(str(result)))
+        print(reg.get_war_mes(result.decode('utf-8')))
     if reg.judge_cmd_result_suc(str(result)):
         return True
     elif reg.judge_cmd_result_err(str(result)):
@@ -66,7 +66,6 @@ class Action():
         flag = []
 
         def whether_delete_rd():
-            print(flag)
             if len(flag) == len(node):
                 Action.linstor_delete_rd(res)
 
@@ -202,7 +201,7 @@ class Action():
         print_excute_result(cmd)
 
     #确认删除函数
-    @staticmethod
+
     def confirm_del():
         print('Are you sure you want to delete it? If yes, enter \'y/yes\'')
         answer = input()
