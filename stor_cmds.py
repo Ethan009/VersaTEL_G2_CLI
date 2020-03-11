@@ -1,6 +1,7 @@
 #coding:utf-8
 import subprocess
 import regex as reg
+from collections import OrderedDict
 
 
 
@@ -59,37 +60,48 @@ class Action():
             else:
                 Action.linstor_delete_rd(res)
 
-
-    #创建resource 手动
+        # 创建resource 手动
     @staticmethod
-    def create_res_manual(res,size,node,stp):
-        flag = []
+    def create_res_manual(res, size, node, stp):
+        flag = OrderedDict()
+
+        def print_fail_node():
+            if len(flag.keys()):
+                print('Creation failure on', *flag.keys(), sep=' ')
+                return flag
+
 
         def whether_delete_rd():
-            if len(flag) == len(node):
+            if len(flag.keys()) == len(node):
                 Action.linstor_delete_rd(res)
 
+        def create_resource(cmd):
+            action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            result = action.stdout
+            if reg.judge_cmd_result_war(str(result)):
+                print(reg.get_war_mes(result.decode('utf-8')))
 
-        def create_resource():
-            if execute_cmd(cmd):
-                print('Resource %s was successfully created on Node %s'%(res,node_one))
-            else:
-                flag.append(node_one)
-
+            if reg.judge_cmd_result_suc(str(result)):
+                print('Resource %s was successfully created on Node %s' % (res, node_one))
+            elif reg.judge_cmd_result_err(str(result)):
+                str_fail_cause = reg.get_err_detailes(result.decode('utf-8'))
+                dict_fail = {node_one: str_fail_cause}
+                flag.update(dict_fail)
 
         if len(stp) == 1:
             if Action.linstor_create_rd(res) and Action.linstor_create_vd(res, size):
                 for node_one in node:
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
-                    create_resource()
+                    create_resource(cmd)
                     whether_delete_rd()
+                print_fail_node()
         elif len(node) == len(stp):
             if Action.linstor_create_rd(res) and Action.linstor_create_vd(res, size):
-                for node_one,stp_one in zip(node,stp):
+                for node_one, stp_one in zip(node, stp):
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
-                    create_resource()
+                    create_resource(cmd)
                     whether_delete_rd()
-
+                print_fail_node()
 
         # if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
             # action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -201,7 +213,7 @@ class Action():
         print_excute_result(cmd)
 
     #确认删除函数
-
+    @staticmethod
     def confirm_del():
         print('Are you sure you want to delete it? If yes, enter \'y/yes\'')
         answer = input()

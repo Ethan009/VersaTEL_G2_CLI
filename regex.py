@@ -62,6 +62,10 @@ def get_err_not_vg(result,node,vg):
         return (re_.search(result).group())
 
 
+def get_err_detailes(result):
+    re_ = re.compile(r'Description:\n[\t\s]*(.*)\n')
+    if re_.search(result):
+        return (re_.search(result).group(1))
 
 def get_war_mes(result):
     re_ = re.compile(r'\x1b\[1;33mWARNING:\n\x1b(?:.*\s*)+\n$')

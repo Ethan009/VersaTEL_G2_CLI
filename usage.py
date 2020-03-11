@@ -6,7 +6,7 @@ stor {node(n)/resource(r)/storagepool(sp)/snap(sn)}'''
 
 #node部分使用手册
 node = '''
-node(n) {create(c)/modify(m)/delete(d)/show(s)} ... '''
+node(n) {create(c)/modify(m)/delete(d)/show(s)}'''
 
 node_create = '''
 node(n) create(c) NODE -ip IP -nt NODETYPE'''
@@ -23,13 +23,13 @@ node(n) show(s) [NODE]'''
 
 #storagepool部分使用手册
 resource = '''
-resource(r) {create(c)/modify(m)/delete(d)/show(s)} ...'''
+resource(r) {create(c)/modify(m)/delete(d)/show(s)}'''
 
 resource_create = '''
-resource(r) create(c) RESOURCE -s SIZE -n NODE -sp STORAGEPOOL
+resource(r) create(c) RESOURCE -s SIZE -n NODE[NODE...] -sp STORAGEPOOL[STORAGEPOOL...]
                       RESOURCE -s SIZE -a -num NUM
-                      RESOURCE -dikless -n NODE
-                      RESOURCE -am -n NODE -sp STORAGEPOOL
+                      RESOURCE -dikless -n NODE[NODE...]
+                      RESOURCE -am -n NODE[NODE...] -sp STORAGEPOOL[STORAGEPOOL...]
                       RESOURCE -am -a -num NUM'''
 
 resource_delete ='''
@@ -47,7 +47,7 @@ resource(r) show(s) [RESOURCE]'''
 
 #storagepool部分使用手册
 storagepool = '''
-storagepool(sp) {create(c)/modify(m)/delete(d)/show(s)} ... '''
+storagepool(sp) {create(c)/modify(m)/delete(d)/show(s)}'''
 
 storagepool_create = '''
 storagepool(sp) create(c) STORAGEPOOL -n NODE -lvm LVM/-tlv THINLV'''
