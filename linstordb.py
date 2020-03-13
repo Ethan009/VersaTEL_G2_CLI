@@ -1,6 +1,6 @@
 #coding:utf-8
 import sqlite3
-import GetLinstor as gi
+import getlinstor as gi
 import colorama as ca
 import functools
 import subprocess
@@ -91,23 +91,26 @@ class LINSTORDB():
     '''
     #连接数据库,创建光标对象
     def __init__(self):
-        self.con = sqlite3.connect("linstor.db", check_same_thread=False)
+        #linstor.db
+        self.con = sqlite3.connect(":memory:", check_same_thread=False)
         self.cur = self.con.cursor()
 
     #执行获取数据，删除表，创建表，插入数据
     def rebuild_tb(self):
         self.get_output()
-        self.drop_tb()
+        # self.drop_tb()
         self.create_tb()
-        self.run_rep()
+        self.run_insert()
 
     def get_output(self):
-        output_sp = subprocess.getoutput('linstor sp l')
-        output_res = subprocess.getoutput('linstor r lv')
-        output_node = subprocess.getoutput('linstor n l')
-        self.info_storagepool = gi.GetLinstor(output_sp)
-        self.info_resource = gi.GetLinstor(output_res)
-        self.info_node = gi.GetLinstor(output_node)
+        output_sp = subprocess.getoutput('linstor --no-color --no-utf8 sp l')
+        output_res = subprocess.getoutput('linstor --no-color --no-utf8 r lv')
+        output_node = subprocess.getoutput('linstor --no-color --no-utf8 n l')
+
+        self.list_node = gi.GetLinstor(output_node)
+        self.list_resource = gi.GetLinstor(output_res)
+        self.list_storagepool = gi.GetLinstor(output_sp)
+
 
     #创建表
     def create_tb(self):
@@ -116,6 +119,7 @@ class LINSTORDB():
         self.cur.execute(self.crt_ntb_sql)
         self.con.commit()
 
+    #删除表，现不使用
     def drop_tb(self):
         drp_storagepooltb_sql = "drop table if exists storagepooltb"#sql语句
         drp_resourcetb_sql = "drop table if exists resourcetb"
@@ -125,31 +129,49 @@ class LINSTORDB():
         self.cur.execute(drp_nodetb_sql)
         self.con.commit()
 
+
+
+
     def rep_storagepooltb(self):
-        for n, i in zip(range(len(self.info_storagepool.list_result))[1:], self.info_storagepool.list_result[1:]):
-            id = n
-            stp, node, dri, pooln, freecap, totalcap, Snap, state = i
+        list_data = self.list_storagepool.get_data()
+        list_id = range(len(list_data))
+
+        for i, data in zip(list_id, list_data):
+            id = i
+            stp, node, dri, pooln, freecap, totalcap, Snap, state = data
             self.cur.execute(self.replace_stb_sql, (id, stp, node, dri, pooln, freecap, totalcap, Snap, state))
 
     def rep_resourcetb(self):
-        for n, i in zip(range(len(self.info_resource.list_result))[1:], self.info_resource.list_result[1:]):
-            id = n
-            node, res, stp, voln, minorn, devname, allocated, use, state = i
+        list_data = self.list_resource.get_data()
+        list_id = range(len(list_data))
+        for i, data in zip(list_id,list_data):
+            id = i
+            node, res, stp, voln, minorn, devname, allocated, use, state = data
             self.cur.execute(self.replace_rtb_sql, (id, node, res, stp, voln, minorn, devname, allocated, use, state))
 
     def rep_nodetb(self):
-        for n, i in zip(range(len(self.info_node.list_result))[1:], self.info_node.list_result[1:]):
-            id = n
-            node, nodetype, addr, state = i
+        list_data = self.list_node.get_data()
+        list_id = range(len(list_data))
+        for i, data in zip(list_id,list_data):
+            id = i
+            node, nodetype, addr, state = data
             self.cur.execute(self.replace_ntb_sql, (id, node, nodetype, addr, state))
 
 
-    def run_rep(self):
+    def run_insert(self):
         self.rep_storagepooltb()
         self.rep_resourcetb()
         self.rep_nodetb()
         self.con.commit()
 
+
+    def data_base_dump(self):
+        cur = self.cur
+        con = self.con
+        self.rebuild_tb()
+        SQL_script = con.iterdump()
+        cur.close()
+        return "\n".join(SQL_script)
 
 
 
@@ -288,6 +310,7 @@ class DataProcess():
             stp_num = self._select_stp_num(node)[0]
             list_one = [node,node_type,res_num,stp_num,addr,status]
             date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     #置顶文字
@@ -297,6 +320,7 @@ class DataProcess():
         res_num = self._select_res_num(node)[0]
         stp_num = self._select_stp_num(node)[0]
         list = [node,node_type,res_num,stp_num,addr,status]
+        self.cur.close()
         return tuple(list)
 
     @coloring
@@ -318,6 +342,7 @@ class DataProcess():
                 mirror_way = self._get_mirro_way(str(i[0]))[0]
                 list_one = [resource,mirror_way,size,device_name,used]
                 date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     #置顶文字
@@ -329,6 +354,7 @@ class DataProcess():
                     resource, size, device_name, used = i
                     mirror_way = self._get_mirro_way(str(i[0]))[0]
                     list_one = [resource, mirror_way, size, device_name, used]
+        self.cur.close()
         return tuple(list_one)
 
     @coloring
@@ -342,6 +368,7 @@ class DataProcess():
                 drbd_role = u'secondary'
             list_one = [node_name,stp_name,drbd_role,status]
             data_list.append(list_one)
+        self.cur.close()
         return data_list
 
     @coloring
@@ -352,6 +379,7 @@ class DataProcess():
             res_num = self._res_sum(str(node_name), str(stp_name))
             list_one = [stp_name,node_name,res_num,driver,pool_name,free_size,total_size,snapshots,status]
             date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     @coloring
@@ -363,6 +391,7 @@ class DataProcess():
             if node_name == node:
                 list_one = [stp_name,node_name,res_num,driver,pool_name,free_size,total_size,snapshots,status]
                 date_list.append(list_one)
+        self.cur.close()
         return date_list
 
 
@@ -374,4 +403,6 @@ class DataProcess():
             res_name, size, device_name, used, status = res
             list_one = [res_name,size,device_name,used,status]
             date_list.append(list_one)
+        self.cur.close()
         return date_list
+
