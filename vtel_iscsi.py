@@ -42,35 +42,35 @@ class CLI():
 	def parser_iscsi(self):
 		## iscsi
 		sub_iscsi = self.vtel_iscsi.add_subparsers(dest='iscsi')
-		self.iscsi_host = sub_iscsi.add_parser('host',help='host operation', add_help=False)
-		self.iscsi_hostgroup = sub_iscsi.add_parser('hg',help='hostgroup operation', add_help=False)
-		self.iscsi_diskgroup = sub_iscsi.add_parser('dg',help='diskgroup operation', add_help=False)
-		self.iscsi_map = sub_iscsi.add_parser('map',help='map operation', add_help=False)
+		self.iscsi_host = sub_iscsi.add_parser('host',aliases='h', help='host operation')
+		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
+		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
+		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
 
 		### iscsi host
 		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
-		self.iscsi_host_create = sub_iscsi_host.add_parser('create',help='host create')
-		self.iscsi_host_show = sub_iscsi_host.add_parser('show',help='host show')
-		self.iscsi_host_delete = sub_iscsi_host.add_parser('delete',help='host delete')
+		self.iscsi_host_create = sub_iscsi_host.add_parser('create', aliases='c', help='host create')
+		self.iscsi_host_show = sub_iscsi_host.add_parser('show', aliases='s', help='host show')
+		self.iscsi_host_delete = sub_iscsi_host.add_parser('delete', aliases='d', help='host delete')
 		#self.iscsi_host_modify = sub_iscsi_host.add_parser('modify',help='host modify')
 
 		### iscsi hostgroup
 		sub_iscsi_hostgroup = self.iscsi_hostgroup.add_subparsers(dest='hostgroup')
-		self.iscsi_hostgroup_create = sub_iscsi_hostgroup.add_parser('create',help='hostgroup create')
-		self.iscsi_hostgroup_show = sub_iscsi_hostgroup.add_parser('show',help='hostgroup show')
-		self.iscsi_hostgroup_delete = sub_iscsi_hostgroup.add_parser('delete',help='hostgroup delete')
+		self.iscsi_hostgroup_create = sub_iscsi_hostgroup.add_parser('create', aliases='c', help='hostgroup create')
+		self.iscsi_hostgroup_show = sub_iscsi_hostgroup.add_parser('show', aliases='s', help='hostgroup show')
+		self.iscsi_hostgroup_delete = sub_iscsi_hostgroup.add_parser('delete', aliases='d', help='hostgroup delete')
 
 		### iscsi diskgroup
 		sub_iscsi_diskgroup = self.iscsi_diskgroup.add_subparsers(dest='diskgroup')
-		self.iscsi_diskgroup_create = sub_iscsi_diskgroup.add_parser('create',help='diskgroup create')
-		self.iscsi_diskgroup_show = sub_iscsi_diskgroup.add_parser('show',help='diskgroup show')
-		self.iscsi_diskgroup_delete = sub_iscsi_diskgroup.add_parser('delete',help='diskgroup delete')
+		self.iscsi_diskgroup_create = sub_iscsi_diskgroup.add_parser('create', aliases='c', help='diskgroup create')
+		self.iscsi_diskgroup_show = sub_iscsi_diskgroup.add_parser('show', aliases='s', help='diskgroup show')
+		self.iscsi_diskgroup_delete = sub_iscsi_diskgroup.add_parser('delete', aliases='d', help='diskgroup delete')
 
 		### iscsi map
 		sub_iscsi_map = self.iscsi_map.add_subparsers(dest='map')
-		self.iscsi_map_create = sub_iscsi_map.add_parser('create',help='map create')
-		self.iscsi_map_show = sub_iscsi_map.add_parser('show',help='map show')
-		self.iscsi_map_delete = sub_iscsi_map.add_parser('delete',help='map delete')
+		self.iscsi_map_create = sub_iscsi_map.add_parser('create', aliases='c', help='map create')
+		self.iscsi_map_show = sub_iscsi_map.add_parser('show', aliases='s', help='map show')
+		self.iscsi_map_delete = sub_iscsi_map.add_parser('delete', aliases='d', help='map delete')
 
 		#### iscsi host argument
 		self.iscsi_host_create.add_argument('iqnname',action='store',help='hostname')
@@ -101,39 +101,39 @@ class CLI():
 	def iscsi_judge(self):
 		js = JSON_OPERATION()
 		args = self.args
-		if args.iscsi == 'host':
-			if args.host == 'create':
+		if args.iscsi in ['host', 'h']:
+			if args.host in ['create', 'c']:
 				self.judge_hc(args, js)
-			elif args.host == 'show':
+			elif args.host in ['show', 's']:
 				self.judge_hs(args, js)
-			elif args.host == 'delete':
+			elif args.host in ['delete', 'd']:
 				self.judge_hd(args, js)
 			else:
 				print("iscsi host ? (choose from 'create', 'show', 'delete')")
-		elif args.iscsi == 'hg':
-			if args.hostgroup == 'create':
+		elif args.iscsi in ['hostgroup','hg']:
+			if args.hostgroup in ['create', 'c']:
 				self.judge_hgc(args, js)
-			elif args.hostgroup == 'show':
+			elif args.hostgroup in ['show', 's']:
 				self.judge_hgs(args, js)
-			elif args.hostgroup == 'delete':
+			elif args.hostgroup in ['delete', 'd']:
 				self.judge_hgd(args, js)
 			else:
 				print("iscsi hostgroup ? (choose from 'create', 'show', 'delete')")
-		elif args.iscsi == 'dg':
-			if args.diskgroup == 'create':
+		elif args.iscsi in ['diskgroup','dg']:
+			if args.diskgroup in ['create', 'c']:
 				self.judge_dgc(args, js)
-			elif args.diskgroup == 'show':
+			elif args.diskgroup in ['show', 's']:
 				self.judge_dgs(args, js)
-			elif args.diskgroup == 'delete':
+			elif args.diskgroup in ['delete', 'd']:
 				self.judge_dgd(args, js)
 			else:
 				print("iscsi diskgroup ? (choose from 'create', 'show', 'delete')")
-		elif args.iscsi == 'map':
-			if args.map == 'create':
+		elif args.iscsi in ['map','m']:
+			if args.map in ['create', 'c']:
 				self.judge_mc(args, js)
-			elif args.map == 'show':
+			elif args.map in ['show', 's']:
 				self.judge_ms(args, js)
-			elif args.map == 'delete':
+			elif args.map in ['delete', 'd']:
 				self.judge_md(args, js)
 			else:
 				print("iscsi map ? (choose from 'create', 'show', 'delete')")
@@ -378,5 +378,5 @@ class JSON_OPERATION:
 
 if __name__ == '__main__':
 	args = CLI()
-	# print(args.args)
+	print(args.args)
 	
