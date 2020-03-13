@@ -320,7 +320,7 @@ class CLI():
 		cd = crmdata()
 		crm_config_statu = cd.re_data()
 		print("update crm_config_statu :")
-		print("	", crm_config_statu, "\n")
+		pprint(crm_config_statu)
 		js.up_crmconfig(crm_config_statu)
 
 
