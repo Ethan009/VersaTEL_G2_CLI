@@ -4,6 +4,7 @@ import getlinstor as gi
 import colorama as ca
 import functools
 import subprocess
+import socket
 
 
 class LINSTORDB():
@@ -137,7 +138,7 @@ class LINSTORDB():
         list_id = range(len(list_data))
 
         for i, data in zip(list_id, list_data):
-            id = i
+            id = i+1
             stp, node, dri, pooln, freecap, totalcap, Snap, state = data
             self.cur.execute(self.replace_stb_sql, (id, stp, node, dri, pooln, freecap, totalcap, Snap, state))
 
@@ -145,7 +146,7 @@ class LINSTORDB():
         list_data = self.list_resource.get_data()
         list_id = range(len(list_data))
         for i, data in zip(list_id,list_data):
-            id = i
+            id = i+1
             node, res, stp, voln, minorn, devname, allocated, use, state = data
             self.cur.execute(self.replace_rtb_sql, (id, node, res, stp, voln, minorn, devname, allocated, use, state))
 
@@ -153,7 +154,7 @@ class LINSTORDB():
         list_data = self.list_node.get_data()
         list_id = range(len(list_data))
         for i, data in zip(list_id,list_data):
-            id = i
+            id = i+1
             node, nodetype, addr, state = data
             self.cur.execute(self.replace_ntb_sql, (id, node, nodetype, addr, state))
 
@@ -165,6 +166,8 @@ class LINSTORDB():
         self.con.commit()
 
 
+
+
     def data_base_dump(self):
         cur = self.cur
         con = self.con
@@ -174,6 +177,18 @@ class LINSTORDB():
         return "\n".join(SQL_script)
 
 
+    def conn(self):
+        client = socket.socket()
+        client.connect(('10.203.1.198', 12129))
+        judge_conn = client.recv(8192).decode()
+        print(judge_conn)
+
+        client.send(b'database')
+        client.recv(8192)
+        client.sendall(self.data_base_dump().encode())
+        client.recv(8192)
+        client.send(b'exit')
+        client.close()
 
 
 #上色装饰器
@@ -405,4 +420,5 @@ class DataProcess():
             date_list.append(list_one)
         self.cur.close()
         return date_list
+
 
