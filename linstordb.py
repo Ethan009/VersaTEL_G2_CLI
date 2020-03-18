@@ -383,7 +383,6 @@ class DataProcess():
                 drbd_role = u'secondary'
             list_one = [node_name,stp_name,drbd_role,status]
             data_list.append(list_one)
-        self.cur.close()
         return data_list
 
     @coloring
@@ -406,7 +405,7 @@ class DataProcess():
             if node_name == node:
                 list_one = [stp_name,node_name,res_num,driver,pool_name,free_size,total_size,snapshots,status]
                 date_list.append(list_one)
-        self.cur.close()
+
         return date_list
 
 
@@ -418,7 +417,6 @@ class DataProcess():
             res_name, size, device_name, used, status = res
             list_one = [res_name,size,device_name,used,status]
             date_list.append(list_one)
-        self.cur.close()
         return date_list
 
 
