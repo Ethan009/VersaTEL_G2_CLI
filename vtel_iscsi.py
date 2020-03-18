@@ -43,6 +43,7 @@ class CLI():
 		## iscsi
 		sub_iscsi = self.vtel_iscsi.add_subparsers(dest='iscsi')
 		self.iscsi_host = sub_iscsi.add_parser('host',aliases='h', help='host operation')
+		self.iscsi_host = sub_iscsi.add_parser('disk',aliases='d', help='disk operation')
 		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
 		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
 		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
@@ -54,6 +55,9 @@ class CLI():
 		self.iscsi_host_delete = sub_iscsi_host.add_parser('delete', aliases='d', help='host delete')
 		#self.iscsi_host_modify = sub_iscsi_host.add_parser('modify',help='host modify')
 
+		### iscsi disk
+		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
+		self.iscsi_host_create = sub_iscsi_host.add_parser('create', aliases='c', help='host create')
 		### iscsi hostgroup
 		sub_iscsi_hostgroup = self.iscsi_hostgroup.add_subparsers(dest='hostgroup')
 		self.iscsi_hostgroup_create = sub_iscsi_hostgroup.add_parser('create', aliases='c', help='hostgroup create')
@@ -300,8 +304,13 @@ class CLI():
 		else:
 			if js.check_key('Map',args.show):
 				print(args.show + ":")
-				for k in js.get_data('Map').get(args.show):
-					print("	" + k)
+				maplist = js.get_data('Map').get(args.show)
+				print('	' + maplist[0] + ':')
+				for i in js.get_data('HostGroup').get(maplist[0]):
+					print('		' + i + ': ' + js.get_data('Host').get(i))
+				print('	' + maplist[1] + ':')
+				for i in js.get_data('DiskGroup').get(maplist[1]):
+					print('		' + i + ': ' + js.get_data('Disk').get(i))
 			else:
 				print("Fail! Can't find " + args.show)
 
@@ -319,8 +328,8 @@ class CLI():
 	def crm_up(self, js):
 		cd = crmdata()
 		crm_config_statu = cd.re_data()
-		print("update crm_config_statu :")
-		pprint(crm_config_statu)
+		# print("update crm_config_statu :")
+		# pprint(crm_config_statu)
 		js.up_crmconfig(crm_config_statu)
 
 
@@ -378,5 +387,5 @@ class JSON_OPERATION:
 
 if __name__ == '__main__':
 	args = CLI()
-	print(args.args)
+	# print(args.args)
 	
