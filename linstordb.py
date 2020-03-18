@@ -1,8 +1,194 @@
 #coding:utf-8
-import iSCSIDB as db
-import prettytable as pt
+import sqlite3
+import getlinstor as gi
 import colorama as ca
 import functools
+import subprocess
+import socket
+
+
+class LINSTORDB():
+    #LINSTOR表
+    crt_sptb_sql = '''
+    create table if not exists storagepooltb(
+        id integer primary key, 
+        StoragePool varchar(20),
+        Node varchar(20),
+        Driver varchar(20),
+        PoolName varchar(20),
+        FreeCapacity varchar(20),
+        TotalCapacity varchar(20),
+        SupportsSnapshots varchar(20),
+        State varchar(20)
+        );'''
+
+    crt_rtb_sql = '''
+    create table if not exists resourcetb(
+        id integer primary key,
+        Node varchar(20),
+        Resource varchar(20),
+        Storagepool varchar(20),
+        VolumeNr varchar(20),
+        MinorNr varchar(20),
+        DeviceName varchar(20),
+        Allocated varchar(20),
+        InUse varchar(20),
+        State varchar(20)
+        );'''
+
+    crt_ntb_sql = '''
+    create table if not exists nodetb(
+        id integer primary key,
+        Node varchar(20),
+        NodeType varchar(20),
+        Addresses varchar(20),
+        State varchar(20)
+        );'''
+
+
+    replace_stb_sql = '''
+    replace into storagepooltb
+    (
+        id,
+        StoragePool,
+        Node,
+        Driver,
+        PoolName,
+        FreeCapacity,
+        TotalCapacity,
+        SupportsSnapshots,
+        State
+        )
+    values(?,?,?,?,?,?,?,?,?)
+    '''
+
+    replace_rtb_sql = '''
+        replace into resourcetb
+        (   
+            id,
+            Node,
+            Resource,
+            StoragePool,
+            VolumeNr,
+            MinorNr,
+            DeviceName,
+            Allocated,
+            InUse,
+            State
+            )
+        values(?,?,?,?,?,?,?,?,?,?)
+    '''
+
+    replace_ntb_sql = '''
+        replace into nodetb
+        (
+            id,
+            Node,
+            NodeType,
+            Addresses,
+            State
+            )
+        values(?,?,?,?,?)
+    '''
+    #连接数据库,创建光标对象
+    def __init__(self):
+        #linstor.db
+        self.con = sqlite3.connect(":memory:", check_same_thread=False)
+        self.cur = self.con.cursor()
+
+    #执行获取数据，删除表，创建表，插入数据
+    def rebuild_tb(self):
+        self.get_output()
+        # self.drop_tb()
+        self.create_tb()
+        self.run_insert()
+
+    def get_output(self):
+        output_sp = subprocess.getoutput('linstor --no-color --no-utf8 sp l')
+        output_res = subprocess.getoutput('linstor --no-color --no-utf8 r lv')
+        output_node = subprocess.getoutput('linstor --no-color --no-utf8 n l')
+
+        self.list_node = gi.GetLinstor(output_node)
+        self.list_resource = gi.GetLinstor(output_res)
+        self.list_storagepool = gi.GetLinstor(output_sp)
+
+
+    #创建表
+    def create_tb(self):
+        self.cur.execute(self.crt_sptb_sql)#检查是否存在表，如不存在，则新创建表
+        self.cur.execute(self.crt_rtb_sql)
+        self.cur.execute(self.crt_ntb_sql)
+        self.con.commit()
+
+    #删除表，现不使用
+    def drop_tb(self):
+        drp_storagepooltb_sql = "drop table if exists storagepooltb"#sql语句
+        drp_resourcetb_sql = "drop table if exists resourcetb"
+        drp_nodetb_sql = "drop table if exists nodetb"
+        self.cur.execute(drp_storagepooltb_sql)#检查是否存在表，如存在，则删除
+        self.cur.execute(drp_resourcetb_sql)
+        self.cur.execute(drp_nodetb_sql)
+        self.con.commit()
+
+
+
+
+    def rep_storagepooltb(self):
+        list_data = self.list_storagepool.get_data()
+        list_id = range(len(list_data))
+
+        for i, data in zip(list_id, list_data):
+            id = i+1
+            stp, node, dri, pooln, freecap, totalcap, Snap, state = data
+            self.cur.execute(self.replace_stb_sql, (id, stp, node, dri, pooln, freecap, totalcap, Snap, state))
+
+    def rep_resourcetb(self):
+        list_data = self.list_resource.get_data()
+        list_id = range(len(list_data))
+        for i, data in zip(list_id,list_data):
+            id = i+1
+            node, res, stp, voln, minorn, devname, allocated, use, state = data
+            self.cur.execute(self.replace_rtb_sql, (id, node, res, stp, voln, minorn, devname, allocated, use, state))
+
+    def rep_nodetb(self):
+        list_data = self.list_node.get_data()
+        list_id = range(len(list_data))
+        for i, data in zip(list_id,list_data):
+            id = i+1
+            node, nodetype, addr, state = data
+            self.cur.execute(self.replace_ntb_sql, (id, node, nodetype, addr, state))
+
+
+    def run_insert(self):
+        self.rep_storagepooltb()
+        self.rep_resourcetb()
+        self.rep_nodetb()
+        self.con.commit()
+
+
+
+
+    def data_base_dump(self):
+        cur = self.cur
+        con = self.con
+        self.rebuild_tb()
+        SQL_script = con.iterdump()
+        cur.close()
+        return "\n".join(SQL_script)
+
+
+    def conn(self):
+        client = socket.socket()
+        client.connect(('10.203.1.198', 12129))
+        judge_conn = client.recv(8192).decode()
+        print(judge_conn)
+
+        client.send(b'database')
+        client.recv(8192)
+        client.sendall(self.data_base_dump().encode())
+        client.recv(8192)
+        client.send(b'exit')
+        client.close()
 
 
 #上色装饰器
@@ -21,11 +207,10 @@ def coloring(func):
 
 
 
-class Process_data():
-
+class DataProcess():
     def __init__(self):
-        self.linstor_db = db.LINSTORDB()
-        self.linstor_db.reb_tb()
+        self.linstor_db = LINSTORDB()
+        self.linstor_db.rebuild_tb()
         self.cur = self.linstor_db.cur
 
     #获取表单行数据的通用方法
@@ -140,6 +325,7 @@ class Process_data():
             stp_num = self._select_stp_num(node)[0]
             list_one = [node,node_type,res_num,stp_num,addr,status]
             date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     #置顶文字
@@ -149,6 +335,7 @@ class Process_data():
         res_num = self._select_res_num(node)[0]
         stp_num = self._select_stp_num(node)[0]
         list = [node,node_type,res_num,stp_num,addr,status]
+        self.cur.close()
         return tuple(list)
 
     @coloring
@@ -165,11 +352,12 @@ class Process_data():
         date_list = []
         list_one = []
         for i in self._get_resource():
-            # if i[1]: 过滤size为空的resource
-            resource, size, device_name, used = i
-            mirror_way = self._get_mirro_way(str(i[0]))[0]
-            list_one = [resource,mirror_way,size,device_name,used]
-            date_list.append(list_one)
+            if i[1]: #过滤size为空的resource
+                resource, size, device_name, used = i
+                mirror_way = self._get_mirro_way(str(i[0]))[0]
+                list_one = [resource,mirror_way,size,device_name,used]
+                date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     #置顶文字
@@ -181,6 +369,7 @@ class Process_data():
                     resource, size, device_name, used = i
                     mirror_way = self._get_mirro_way(str(i[0]))[0]
                     list_one = [resource, mirror_way, size, device_name, used]
+        self.cur.close()
         return tuple(list_one)
 
     @coloring
@@ -204,6 +393,7 @@ class Process_data():
             res_num = self._res_sum(str(node_name), str(stp_name))
             list_one = [stp_name,node_name,res_num,driver,pool_name,free_size,total_size,snapshots,status]
             date_list.append(list_one)
+        self.cur.close()
         return date_list
 
     @coloring
@@ -215,6 +405,7 @@ class Process_data():
             if node_name == node:
                 list_one = [stp_name,node_name,res_num,driver,pool_name,free_size,total_size,snapshots,status]
                 date_list.append(list_one)
+
         return date_list
 
 
@@ -228,83 +419,4 @@ class Process_data():
             date_list.append(list_one)
         return date_list
 
-
-
-class Table_show():
-    table = pt.PrettyTable()
-
-    def __init__(self):
-        ca.init(autoreset=True)
-
-    def run(self):
-        self.pd = Process_data()
-
-    def node_all(self):
-        node_all_tb = pt.PrettyTable()
-        self.table.field_names = ["node", "node type", "res num", "stp num", "addr", "status"]
-        for i in self.pd.process_data_node_all():
-            self.table.add_row(i)
-        print(self.table)
-
-    def node_one(self,node):
-        node_one_tb = pt.PrettyTable()
-        node_one_tb.field_names = ['res_name','stp_name','size','device_name','used','status']
-        for i in self.pd.process_data_node_specific(node):
-            node_one_tb.add_row(i)
-
-        stp_all_tb = pt.PrettyTable()
-        stp_all_tb.field_names = ['stp_name','node_name','res_num','driver','pool_name','free_size','total_size','snapshots','status']
-        for i in self.pd.process_data_stp_all_of_node(node):
-            stp_all_tb.add_row(i)
-
-        try:
-            print("node:%s\nnodetype:%s\nresource num:%s\nstoragepool num:%s\naddr:%s\nstatus:%s"%self.pd.process_data_node_one(node))
-            print(node_one_tb)
-            print(stp_all_tb)
-        except TypeError:
-            print('Node %s does not exist.'%node)
-
-
-
-    def resource_all(self):
-        resource_all_tb = pt.PrettyTable()
-        resource_all_tb.field_names = ["resource","mirror_way","size","device_name","used"]
-        for i in self.pd.process_data_resource_all():
-            resource_all_tb.add_row(i)
-        print(resource_all_tb)
-
-    def resource_one(self,resource):
-        resource_one_tb = pt.PrettyTable()
-        resource_one_tb.field_names = ['node_name','stp_name','drbd_role','status']
-        for i in self.pd.process_data_resource_specific(resource):
-            resource_one_tb.add_row(i)
-        try:
-            print("resource:%s\nmirror_way:%s\nsize:%s\ndevice_name:%s\nused:%s"%self.pd.process_data_resource_one(resource))
-            print(resource_one_tb)
-        except TypeError:
-            print ('Resource %s does not exist.' % resource)
-
-    def storagepool_all(self):
-        stp_all_tb = pt.PrettyTable()
-        stp_all_tb.field_names = ['stp_name','node_name','res_num','driver','pool_name','free_size','total_size','snapshots','status']
-        for i in self.pd.process_data_stp_all():
-            stp_all_tb.add_row(i)
-        print(stp_all_tb)
-
-    def storagepool_one(self,stp):
-        stp_specific = pt.PrettyTable()
-        stp_specific.field_names = ['res_name','size','device_name','used','status']
-        for i in self.pd.process_data_stp_specific(stp):
-            stp_specific.add_row(i)
-        node_num = self.pd._node_num_of_storagepool(stp)
-        node_name = self.pd._node_name_of_storagepool(stp)
-        if node_num == 0:
-            print('The storagepool does not exist')
-        elif node_num == 1:
-            print('Only one node (%s) exists in the storage pool named %s'%(node_name,stp))
-            print(stp_specific)
-        else:
-            node_name = ' and '.join(node_name)
-            print('The storagepool name for %s nodes is %s,they are %s.'%(node_num,stp,node_name))
-            print(stp_specific)
 
