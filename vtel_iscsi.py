@@ -56,7 +56,7 @@ class CLI():
 		#self.iscsi_host_modify = sub_iscsi_host.add_parser('modify',help='host modify')
 
 		### iscsi disk
-		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
+		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='disk')
 		self.iscsi_host_create = sub_iscsi_host.add_parser('create', aliases='c', help='host create')
 		### iscsi hostgroup
 		sub_iscsi_hostgroup = self.iscsi_hostgroup.add_subparsers(dest='hostgroup')
