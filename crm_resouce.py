@@ -7,10 +7,10 @@ import time
 @note: VersaTEL-iSCSI获取crm信息
 @time: 2020/03/11
 """
-class crmdata(object):
+class crmdata():
 	"""docstring for crm_data"""
 	def __init__(self):
-		super(crmdata, self).__init__()
+		
 		self.iscsistatu = r'''primitive apple iSCSILogicalUnit \
 			params target_iqn="iqn.2019-09.feixitek.com:1" implementation=lio-t lun=5 path="/dev/drbd1000" allowed_initiators="iqn.1993-08.org.debian:01:bc429d5fc3b iqn.1991-05.com.microsoft:win7tian" \
 			        meta target-role=Started
@@ -79,6 +79,30 @@ class crmdata(object):
 			        stonith-enabled=false \
 			        no-quorum-policy=ignore '''
 
+		self.resstatu = '''+---------------------------------------------------------------------------------------------------------------+
+| Node  | Resource  | StoragePool          | VolumeNr | MinorNr | DeviceName    | Allocated | InUse  |    State |
+|===============================================================================================================|
+| klay1 | apple     | pool_hdd             | 0        | 1000    | /dev/drbd1000 | 12 MiB    | InUse  | UpToDate |
+| klay2 | apple     | DfltDisklessStorPool | 0        | 1000    | /dev/drbd1000 |           | Unused | Diskless |
+| klay1 | banana    | pool_hdd             | 0        | 1001    | /dev/drbd1001 | 12 MiB    | InUse  | UpToDate |
+| klay2 | banana    | pool_hdd             | 0        | 1001    | /dev/drbd1001 | 12 MiB    | Unused | UpToDate |
+| klay1 | ben       | pool_hdd             | 0        | 1005    | /dev/drbd1005 | 12 MiB    | InUse  | UpToDate |
+| klay2 | ben       | pool_hdd             | 0        | 1005    | /dev/drbd1005 | 12 MiB    | Unused | UpToDate |
+| klay1 | fred      | pool_hdd             | 0        | 1003    | /dev/drbd1003 | 12 MiB    | InUse  | UpToDate |
+| klay2 | fred      | pool_hdd             | 0        | 1003    | /dev/drbd1003 | 12 MiB    | Unused | UpToDate |
+| klay1 | fst       | pool_hdd             | 0        | 1011    | /dev/drbd1011 | 1.00 GiB  | Unused | UpToDate |
+| klay2 | fst       | pool_hdd             | 0        | 1011    | /dev/drbd1011 | 1.00 GiB  | Unused | UpToDate |
+| klay1 | linstordb | pool_hdd             | 0        | 1002    | /dev/drbd1002 | 252 MiB   | InUse  | UpToDate |
+| klay2 | linstordb | pool_hdd             | 0        | 1002    | /dev/drbd1002 | 252 MiB   | Unused | UpToDate |
+| klay2 | pllo      | pllo                 | 0        | 1012    | None          |           | Unused |  Unknown |
+| klay1 | seven     | pool_hdd             | 0        | 1006    | /dev/drbd1006 | 12 MiB    | InUse  | UpToDate |
+| klay2 | seven     | pool_hdd             | 0        | 1006    | /dev/drbd1006 | 12 MiB    | Unused | UpToDate |
+| klay1 | ssss      | pool_hdd             | 0        | 1009    | /dev/drbd1009 | 12 MiB    | Unused | UpToDate |
+| klay1 | test      | pool_hdd             | 0        | 1004    | /dev/drbd1004 | 10.00 GiB | InUse  | UpToDate |
+| klay2 | test      | pool_hdd             | 0        | 1004    | /dev/drbd1004 | 10.00 GiB | Unused | UpToDate |
+| klay2 | xx2       | pool_hdd             | 0        | 1010    | /dev/drbd1010 | 12 MiB    | Unused | UpToDate |
++---------------------------------------------------------------------------------------------------------------+'''
+
 	def re_data(self):
 		plogical = re.compile(r'primitive\s(\w*)\s\w*\s\\\s*\w*\starget_iqn="([a-zA-Z0-9.:-]*)"\s[a-z=-]*\slun=(\d*)\spath="([a-zA-Z0-9/]*)"\sallowed_initiators="([a-zA-Z0-9.: -]+)"(?:.*\s*){2}meta target-role=(\w*)')
 		pvip = re.compile(r'primitive\s(\w*)\sIPaddr2\s\\\s*\w*\sip=([0-9.]*)\s\w*=(\d*)\s')
@@ -95,8 +119,14 @@ class crmdata(object):
 		# 	sdict.update({"iqn":s[1]})
 			#sdict.update({})
 		# print(sdict)
+
+	def lsdata(self):
+		linstordata = self.resstatu
+		return linstordata
+
 	def get_data(self):
-		crmcli = subprocess.check_output('crm configure show',shell=True)
+		crmconfig = subprocess.check_output('crm configure show',shell=True)
+		linstorres = subprocess.getoutput('linstor --no-color --no-utf8 r lv', shell=True)
 
 
 

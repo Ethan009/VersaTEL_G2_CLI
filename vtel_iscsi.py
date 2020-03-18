@@ -4,6 +4,7 @@ import json
 import os
 from pprint import pprint
 from crm_resouce import crmdata
+from getlinstor import GetLinstor
 """
 @author: Zane
 @note: VersaTEL-iSCSI
@@ -43,7 +44,7 @@ class CLI():
 		## iscsi
 		sub_iscsi = self.vtel_iscsi.add_subparsers(dest='iscsi')
 		self.iscsi_host = sub_iscsi.add_parser('host',aliases='h', help='host operation')
-		self.iscsi_host = sub_iscsi.add_parser('disk',aliases='d', help='disk operation')
+		self.iscsi_disk = sub_iscsi.add_parser('disk',aliases='d', help='disk operation')
 		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
 		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
 		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
@@ -56,8 +57,9 @@ class CLI():
 		#self.iscsi_host_modify = sub_iscsi_host.add_parser('modify',help='host modify')
 
 		### iscsi disk
-		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='disk')
-		self.iscsi_host_create = sub_iscsi_host.add_parser('create', aliases='c', help='host create')
+		sub_iscsi_disk = self.iscsi_disk.add_subparsers(dest='disk')
+		self.iscsi_disk_show = sub_iscsi_disk.add_parser('show', aliases='s', help='disk show')
+
 		### iscsi hostgroup
 		sub_iscsi_hostgroup = self.iscsi_hostgroup.add_subparsers(dest='hostgroup')
 		self.iscsi_hostgroup_create = sub_iscsi_hostgroup.add_parser('create', aliases='c', help='hostgroup create')
@@ -81,6 +83,9 @@ class CLI():
 		self.iscsi_host_create.add_argument('iqn',action='store',help='iqn')
 		self.iscsi_host_show.add_argument('show',action='store',help='host show',nargs='?',default='all')	
 		self.iscsi_host_delete.add_argument('iqnname',action='store',help='iqnname',default=None)
+
+		#### iscsi disk argument
+		self.iscsi_disk_show.add_argument('show',action='store',help='disk show',nargs='?',default='all')
 
 		#### iscsi hostgroup argument
 		self.iscsi_hostgroup_create.add_argument('hostgroupname',action='store',help='hostgroup_create name')
@@ -114,6 +119,11 @@ class CLI():
 				self.judge_hd(args, js)
 			else:
 				print("iscsi host ? (choose from 'create', 'show', 'delete')")
+		elif args.iscsi in ['disk','d']:
+			if args.disk in ['show','s']:
+				self.judge_ds(args, js)
+			else:
+				print("iscsi disk ? (choose from 'show')")
 		elif args.iscsi in ['hostgroup','hg']:
 			if args.hostgroup in ['create', 'c']:
 				self.judge_hgc(args, js)
@@ -142,7 +152,7 @@ class CLI():
 			else:
 				print("iscsi map ? (choose from 'create', 'show', 'delete')")
 		else:
-			print("iscsi ？ (choose from 'host', 'hg', 'dg', 'map')")
+			print("iscsi ？ (choose from 'host', 'disk', 'hg', 'dg', 'map')")
 
 	# host创建
 	def judge_hc(self, args, js):
@@ -178,6 +188,26 @@ class CLI():
 				print("Delete success!")
 		else:
 			print("Fail! Can't find " + args.iqnname)
+
+	# disk查询
+	def judge_ds(self, args, js):
+		cd = crmdata()
+		data = cd.lsdata()
+		linstorlv = GetLinstor(data)
+		disks = {}
+		for d in linstorlv.get_data():
+			disks.update({d[1]:d[5]})
+		js.up_data('Disk',disks)
+		if args.show == 'all' or args.show == None:
+			print("Disk:")
+			for k in disks:
+				print("	" + k + ": " + disks[k])
+		else:
+			if js.check_key('Disk',args.show):
+				print(args.show, ":", js.get_data('Disk').get(args.show))
+			else:
+				print("Fail! Can't find " + args.show)
+
 
 	# hostgroup创建
 	def judge_hgc(self, args, js):
@@ -344,13 +374,13 @@ class JSON_OPERATION:
         rdata.close
         return read_json_dict
 
-    #创建Host、Disk、Target、HostGroup、DiskGroup,Map
+    #创建Host、HostGroup、DiskGroup,Map
     def creat_data(self,first_key,data_key,data_value):
         self.read_data[first_key].update({data_key:data_value})
         with open('iSCSI_Data.json', "w") as fw:
             json.dump(self.read_data, fw)
 
-    #删除Host、Disk、Target，HostGroup、DiskGroup,Map
+    #删除Host、HostGroup、DiskGroup,Map
     def delete_data(self,first_key,data_key):
         self.read_data[first_key].pop(data_key)
         with open('iSCSI_Data.json', "w") as fw:
@@ -374,6 +404,12 @@ class JSON_OPERATION:
     		if data_value in self.read_data[first_key][key]:
     			return True
     	return False
+
+    #更新disk
+    def up_data(self,first_key,data):
+        self.read_data[first_key] = data
+        with open('iSCSI_Data.json', "w") as fw:
+            json.dump(self.read_data, fw)
 
 	#更新crm configure资源的信息
     def up_crmconfig(self, data):
