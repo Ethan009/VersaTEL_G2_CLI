@@ -56,7 +56,9 @@ class Action():
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
         if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
             if execute_cmd(cmd):
-                print('SUCESS')
+                print('111')
+                print('SUCCESS')
+                return True
             else:
                 Action.linstor_delete_rd(res)
 

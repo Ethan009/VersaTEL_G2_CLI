@@ -1,11 +1,10 @@
 #coding:utf-8
-import socketserver,socket,subprocess,timeit
+import socketserver,socket,subprocess
 
 host_port = 12129
-# host_ip = "192.168.36.61"
-host_ip = "10.203.1.198"
+host_ip = "192.168.36.61"
+# host_ip = "10.203.1.198"
 byteData = b'null'
-start = 0
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
@@ -18,13 +17,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             if data=='exit':
                 break
             elif 'CLIcommands' in data:
-                start = timeit.timeit()
                 subprocess.getoutput('python3 vtel.py stor gui -db')
+                data_len = str(len(byteData))
+                print(byteData)
+                self.request.sendall(data_len.encode())
+                self.request.recv(8192)
                 self.request.sendall(byteData)
             elif 'database' in data:
-                end = timeit.timeit()
-                print('time')
-                print(end-start)
                 self.request.send(b'ok')
                 sql_script = self.request.recv(8192)
                 byteData = sql_script
