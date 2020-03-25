@@ -6,7 +6,7 @@ import view
 from stor_cmds import Action as stor_action
 import usage
 import linstordb
-import socketsend
+import cli_socketclient
 
 #多节点创建resource时，storapoo多于node的异常类
 class NodeLessThanSPError(Exception):
@@ -107,7 +107,7 @@ class CLI():
 
         #创建diskless
         group_manual_diskless = self.resource_create.add_argument_group(title='diskless create')
-        group_manual_diskless.add_argument('-diskless', action='store_true', default=False, dest='diskless',help='diskless')
+        group_manual_diskless.add_argument('-diskless', action='store_true', default=False, dest='diskless',help='Will add a diskless resource on all non replica nodes.')
 
         #创建mirror way，可用于自动创建和手动创建
         group_add_mirror = self.resource_create.add_argument_group(title='add mirror way')
@@ -173,7 +173,9 @@ class CLI():
         parser_delete = self.node_delete
 
         def node_create():
-            if args.node and args.nodetype and args.ip:
+            if args.gui:
+                print('zhixing gui')
+            elif args.node and args.nodetype and args.ip:
                 stor_action.create_node(args.node, args.ip, args.nodetype)
             else:
                 parser_create.print_help()
@@ -231,9 +233,9 @@ class CLI():
         添加mirror到其他节点(自动):vtel stor create RESOURCE -am -a -num NUM
         """
         def resource_create():
-            def is_args_correct():
-                if len(args.node) >= len(args.storagepool):
-                    return True
+            # def is_args_correct():
+            #     if len(args.node) >= len(args.storagepool):
+            #         return True
 
 
             """
@@ -241,121 +243,135 @@ class CLI():
             把创建resource的三种模式：正常创建（包括自动和手动），创建diskless，添加mirror分别封装
             最后再执行
             """
-            # #指定node和storagepool数量的规范判断，符合则继续执行
-            # def is_args_correct():
-            #     if len(args.node) < len(args.storagepool):
-            #         raise NodeLessThanSPError('指定的storagepool数量应少于node数量')
-            #
-            # #特定模式必需的参数
-            # list_auto_required = [args.auto, args.num]
-            # list_manual_required = [args.node, args.storagepool]
-            #
-            #
-            # #正常创建resource
-            # def create_normal_resource():
-            #     #正常创建resource禁止输入的参数
-            #     list_normal_forbid = [args.diskless, args.add_mirror]
-            #     if not args.size:
-            #         return
-            #     if any(list_normal_forbid):
-            #         return
-            #     if all(list_auto_required) and not any(list_manual_required):
-            #         print('执行自动创建')
-            #         return True
-            #     elif all(list_manual_required) and not any(list_auto_required):
-            #         try:
-            #             is_args_correct()
-            #         except NodeLessThanSPError:
-            #             pass
-            #         else:
-            #             print('执行手动创建')
-            #             return True
-            #
-            # #创建resource的diskless资源条件判断，符合则执行
-            # def create_diskless_resource():
-            #     list_diskless_forbid = [args.auto, args.num, args.storagepool, args.add_mirror,args.size]
-            #     if not args.node:
-            #         return
-            #     if not any(list_diskless_forbid):
-            #         print('创建diskless')
-            #         return True
-            #
-            # #添加mirror
-            # def add_resource_mirror():
-            #     # 添加mirror禁止输入的参数
-            #     list_add_mirror_forbid = [args.diskless, args.size]
-            #     if not args.add_mirror:
-            #         return
-            #     if any(list_add_mirror_forbid):
-            #         return
-            #     if all(list_auto_required) and not any(list_manual_required):
-            #         print('自动添加mirror')
-            #         return True
-            #     elif all(list_manual_required) and not any(list_auto_required):
-            #         try:
-            #             is_args_correct()
-            #         except NodeLessThanSPError:
-            #             pass
-            #         else:
-            #             print('手动添加mirror')
-            #             return True
-            #
-            #
-            ## 总执行
-            # if create_normal_resource():
-            #     pass
-            # elif create_diskless_resource():
-            #     pass
-            # elif add_resource_mirror():
-            #     pass
-            # else:
-            #     parser_create.print_help()
+            #指定node和storagepool数量的规范判断，符合则继续执行
+            def is_args_correct():
+                if len(args.node) < len(args.storagepool):
+                    raise NodeLessThanSPError('指定的storagepool数量应少于node数量')
 
-
-            # 对应创建模式必需输入的参数和禁止输入的参数
+            #特定模式必需的参数
             list_auto_required = [args.auto, args.num]
-            list_auto_forbid = [args.node, args.storagepool, args.diskless,args.add_mirror]
             list_manual_required = [args.node, args.storagepool]
-            list_manual_forbid = [args.auto, args.num, args.diskless,args.add_mirror]
-            list_diskless_forbid = [args.auto, args.num, args.storagepool,args.add_mirror]
 
 
-            if args.size:
-                #自动创建条件判断，符合则执行
-                if all(list_auto_required) and not any(list_auto_forbid):
+            #正常创建resource
+            def create_normal_resource():
+                #正常创建resource禁止输入的参数
+                list_normal_forbid = [args.diskless, args.add_mirror]
+                if not args.size:
+                    return
+                if any(list_normal_forbid):
+                    return
+                if all(list_auto_required) and not any(list_manual_required):
                     stor_action.create_res_auto(args.resource, args.size, args.num)
-                #手动创建条件判断，符合则执行
-                elif all(list_manual_required) and not any(list_manual_forbid):
-                    if is_args_correct():
+                    return True
+                elif all(list_manual_required) and not any(list_auto_required):
+                    try:
+                        is_args_correct()
+                    except NodeLessThanSPError:
+                        print('The number of nodes and storage pools do not meet the requirements')
+                        return True
+                    else:
                         stor_action.create_res_manual(args.resource,args.size,args.node,args.storagepool)
-                    else:
-                        parser_create.print_help()
-                else:
-                    parser_create.print_help()
+                        return True
 
-
-            elif args.diskless:
-                # 创建resource的diskless资源条件判断，符合则执行
-                if args.node and not any(list_diskless_forbid):
+            #创建resource的diskless资源条件判断，符合则执行
+            def create_diskless_resource():
+                list_diskless_forbid = [args.auto, args.num, args.storagepool, args.add_mirror,args.size]
+                if not args.node:
+                    return
+                if not any(list_diskless_forbid):
                     stor_action.create_res_diskless(args.node, args.resource)
-                else:
-                    parser_create.print_help()
+                    return True
 
-            elif args.add_mirror:
-                #手动添加mirror条件判断，符合则执行
-                if all([args.node,args.storagepool]) and not any([args.auto, args.num]):
-                    if is_args_correct():
-                        stor_action.add_mirror_manual(args.resource,args.node,args.storagepool)
-                    else:
-                        parser_create.print_help()
-                #自动添加mirror条件判断，符合则执行
-                elif all([args.auto,args.num]) and not any([args.node,args.storagepool]):
+            #添加mirror
+            def add_resource_mirror():
+                # 添加mirror禁止输入的参数
+                list_add_mirror_forbid = [args.diskless, args.size]
+                if not args.add_mirror:
+                    return
+                if any(list_add_mirror_forbid):
+                    return
+                if all(list_auto_required) and not any(list_manual_required):
                     stor_action.add_mirror_auto(args.resource,args.num)
+                    return True
+                elif all(list_manual_required) and not any(list_auto_required):
+                    try:
+                        is_args_correct()
+                    except NodeLessThanSPError:
+                        print('The number of nodes does not meet the requirements')
+                        return True
+                    else:
+                        stor_action.add_mirror_manual(args.resource,args.node,args.storagepool)
+                        return True
+
+
+            # 总执行
+            if args.gui:
+                if create_normal_resource():
+                    pass
+                elif create_diskless_resource():
+                    pass
+                elif add_resource_mirror():
+                    pass
                 else:
                     parser_create.print_help()
 
             else:
-                parser_create.print_help()
+                if create_normal_resource():
+                    pass
+                elif create_diskless_resource():
+                    pass
+                elif add_resource_mirror():
+                    pass
+                else:
+                    parser_create.print_help()
+
+
+
+            # # 对应创建模式必需输入的参数和禁止输入的参数
+            # list_auto_required = [args.auto, args.num]
+            # list_auto_forbid = [args.node, args.storagepool, args.diskless,args.add_mirror]
+            # list_manual_required = [args.node, args.storagepool]
+            # list_manual_forbid = [args.auto, args.num, args.diskless,args.add_mirror]
+            # list_diskless_forbid = [args.auto, args.num, args.storagepool,args.add_mirror]
+            #
+            #
+            # if args.size:
+            #     #自动创建条件判断，符合则执行
+            #     if all(list_auto_required) and not any(list_auto_forbid):
+            #         stor_action.create_res_auto(args.resource, args.size, args.num)
+            #     #手动创建条件判断，符合则执行
+            #     elif all(list_manual_required) and not any(list_manual_forbid):
+            #         if is_args_correct():
+            #             stor_action.create_res_manual(args.resource,args.size,args.node,args.storagepool)
+            #         else:
+            #             parser_create.print_help()
+            #     else:
+            #         parser_create.print_help()
+            #
+            #
+            # elif args.diskless:
+            #     # 创建resource的diskless资源条件判断，符合则执行
+            #     if args.node and not any(list_diskless_forbid):
+            #         stor_action.create_res_diskless(args.node, args.resource)
+            #     else:
+            #         parser_create.print_help()
+            #
+            # elif args.add_mirror:
+            #     #手动添加mirror条件判断，符合则执行
+            #     if all([args.node,args.storagepool]) and not any([args.auto, args.num]):
+            #         if is_args_correct():
+            #             stor_action.add_mirror_manual(args.resource,args.node,args.storagepool)
+            #         else:
+            #             parser_create.print_help()
+            #     #自动添加mirror条件判断，符合则执行
+            #     elif all([args.auto,args.num]) and not any([args.node,args.storagepool]):
+            #         stor_action.add_mirror_auto(args.resource,args.num)
+            #     else:
+            #         parser_create.print_help()
+            #
+            # else:
+            #     parser_create.print_help()
 
 
         # resource修改功能，未开发
@@ -416,7 +432,9 @@ class CLI():
         parser_delete = self.storagepool_delete
 
         def storagepool_create():
-            if args.storagepool and args.node:
+            if args.gui:
+                print('zhxiing gui')
+            elif args.storagepool and args.node:
                 if args.lvm:
                     stor_action.create_storagepool_lvm(args.node, args.storagepool, args.lvm)
                 elif args.tlv:
@@ -504,8 +522,8 @@ class CLI():
     #gui端测试专用
     def case_gui(self):
         if self.args.db:
-            mes = socketsend.SocketSend()
-            mes.send_resutl(mes.sql_script)#get sql_scipt
+            mes = cli_socketclient.SocketSend()
+            mes.send_result(mes.sql_script)#get sql_scipt
 
 
     def judge(self):

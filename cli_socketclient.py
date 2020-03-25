@@ -2,12 +2,14 @@ import socket,pickle
 import linstordb
 from stor_cmds import Action as stor_action
 
-ip_port = ('192.168.36.61',12129)
+# ip_port = ('192.168.36.61',12129)
+ip_port = ('10.203.1.198',12129)
 
 class SocketSend():
     def __init__(self):
         self.client = socket.socket()
         self.client.connect(ip_port)
+        pass
 
     def sql_script(self,*args):
         db = linstordb.LINSTORDB()
@@ -17,7 +19,7 @@ class SocketSend():
         func = func()
         print(func.encode())
 
-    def send_resutl(self,func,*args):
+    def send_result(self,func,*args):
         client = self.client
         func = func(*args)
         func = pickle.dumps(func)
@@ -29,7 +31,13 @@ class SocketSend():
         client.recv(8192)
         client.send(b'exit')
         client.close()
-
+    #
+    # def send_result(self,func,*args):
+    #     func = func(*args)
+    #     func = pickle.dumps(func)
+    #     print(func)
+    #     func_str = pickle.loads(func)
+    #     print(func_str)
 
 
 
@@ -37,4 +45,10 @@ class SocketSend():
 #
 # s = SocketSend()
 # #
-# s.send_resutl(stor_action.create_res_auto,'res_a','100m',1)
+#
+# res = 'res_test'
+# size = '100m'
+# node = ['vince']
+# stp = ['pool_a']
+#
+# s.send_result(stor_action.create_res_manual,res,size,node,stp)

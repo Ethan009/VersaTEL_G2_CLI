@@ -71,6 +71,8 @@ class Action():
             if len(flag.keys()):
                 print('Creation failure on', *flag.keys(), sep=' ')
                 return flag
+            else:
+                return True
 
 
         def whether_delete_rd():
@@ -96,14 +98,15 @@ class Action():
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
                     create_resource(cmd)
                     whether_delete_rd()
-                print_fail_node()
+                return print_fail_node()
         elif len(node) == len(stp):
             if Action.linstor_create_rd(res) and Action.linstor_create_vd(res, size):
                 for node_one, stp_one in zip(node, stp):
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
                     create_resource(cmd)
                     whether_delete_rd()
-                print_fail_node()
+                return print_fail_node()
+
 
         # if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
             # action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

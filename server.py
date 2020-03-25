@@ -2,8 +2,8 @@
 import socketserver,socket,subprocess
 
 host_port = 12129
-host_ip = "192.168.36.61"
-# host_ip = "10.203.1.198"
+# host_ip = "192.168.36.61"
+host_ip = "10.203.1.198"
 byteData = b'null'
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -12,14 +12,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.request.send(('%s connection succeeded' % h).encode())
         while True:
             data = self.request.recv(4096).decode()
-            global start
             print ('recv:',data)
             if data=='exit':
                 break
             elif 'CLIcommands' in data:
                 subprocess.getoutput('python3 vtel.py stor gui -db')
                 data_len = str(len(byteData))
-                print(byteData)
                 self.request.sendall(data_len.encode())
                 self.request.recv(8192)
                 self.request.sendall(byteData)
