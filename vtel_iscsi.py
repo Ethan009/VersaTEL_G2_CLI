@@ -3,7 +3,7 @@ import argparse
 import json
 import os
 from pprint import pprint
-from crm_resouce import crmdata
+from crm_resouce import crm
 from getlinstor import GetLinstor
 """
 @author: Zane
@@ -191,17 +191,18 @@ class CLI():
 
 	# disk查询
 	def judge_ds(self, args, js):
-		cd = crmdata()
+		cd = crm()
 		data = cd.lsdata()
+		# data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
 		disks = {}
 		for d in linstorlv.get_data():
 			disks.update({d[1]:d[5]})
-		js.up_data('Disk',disks)
+		# js.up_data('Disk',disks)
 		if args.show == 'all' or args.show == None:
 			print("Disk:")
 			for k in disks:
-				print("	" + k + ": " + disks[k])
+				print("	" + "{:<10}".format(k) + ": " + disks[k])
 		else:
 			if js.check_key('Disk',args.show):
 				print(args.show, ":", js.get_data('Disk').get(args.show))
@@ -308,7 +309,7 @@ class CLI():
 		print("map name:",args.mapname)
 		print("hostgroup name:",args.hg)
 		print("diskgroup name:",args.dg)
-		self.crm_up(js)
+		crmdata = self.crm_up(js)
 		if js.check_key('Map',args.mapname):
 			print("The Map \"" + args.mapname + "\" already existed.")
 		elif js.check_key('HostGroup',args.hg) == False:
@@ -318,8 +319,10 @@ class CLI():
 		else:
 			if js.check_value('Map',args.dg) == True:
 				print("The diskgroup already map")
-			js.creat_data('Map',args.mapname,[args.hg,args.dg])
-			print("Create success!")
+			mapdata = self.map_data(js, crmdata, args.hg, args.dg)
+			self.map_crm_c(mapdata)
+			# js.creat_data('Map',args.mapname,[args.hg,args.dg])
+			# print("Create success!")
 
 	# map查询
 	def judge_ms(self, args, js):
@@ -346,21 +349,74 @@ class CLI():
 
 	# map删除
 	def judge_md(self, args, js):
-		print("Delete the map witch name is",args.mapname,"...")
+		print("Delete the map witch name is", args.mapname)
 		if js.check_key('Map',args.mapname):
 			print(js.get_data('Map').get(args.mapname),"will probably be affected ")
-			js.delete_data('Map',args.mapname)
-			print("Delete success!")
+			resname = self.map_data_d(js, args.mapname)
+			self.map_crm_d(resname)
+			# js.delete_data('Map',args.mapname)
+			# print("Delete success!")
 		else:
 			print("Fail! Can't find " + args.mapname)
 
 	# 获取并更新crm信息
 	def crm_up(self, js):
-		cd = crmdata()
+		cd = crm()
 		crm_config_statu = cd.re_data()
-		# print("update crm_config_statu :")
 		# pprint(crm_config_statu)
 		js.up_crmconfig(crm_config_statu)
+		return crm_config_statu
+
+	# 获取创建map所需的数据
+	def map_data(self, js, crmdata, hg, dg):
+		mapdata = {}
+		hostiqn = []
+		for h in js.get_data('HostGroup').get(hg):
+			iqn = js.get_data('Host').get(h)
+			hostiqn.append(iqn)
+		mapdata.update({'host_iqn':hostiqn})
+		disk = js.get_data('DiskGroup').get(dg)
+		cd = crm()
+		data = cd.lsdata()
+		# data = cd.get_data_linstor()
+		linstorlv = GetLinstor(data)
+		diskd = {}
+		for d in linstorlv.get_data():
+			for i in disk:
+				if i in d:
+					diskd.update({d[1]:[d[4],d[5]]})
+		mapdata.update({'disk':diskd})
+		mapdata.update({'target':crmdata[2]})
+		# print(mapdata)
+		return mapdata
+
+	# 获取删除map所需的数据
+	def map_data_d(self, js, mapname):
+		dg = js.get_data('Map').get(mapname)[1]
+		disk = js.get_data('DiskGroup').get(dg)
+		return disk
+
+	# 调用crm创建map
+	def map_crm_c(self, mapdata):
+		cd = crm()
+		for i in mapdata['target']:
+			target = i[0]
+			targetiqn = i[1]
+		# print(mapdata['disk'])
+		for disk in mapdata['disk']:
+			res = [disk, mapdata['disk'].get(disk)[0], mapdata['disk'].get(disk)[1]]
+			cd.createres(res, mapdata['host_iqn'], targetiqn)
+			cd.createco(res[0], target)
+			cd.resstart(res[0])
+			print(" ")
+
+	# 调用crm删除map
+	def map_crm_d(self, resname):
+		cd = crm()
+		for disk in resname:
+			cd.delres(disk)
+			print(" ")
+		return True
 
 
 class JSON_OPERATION:
@@ -424,4 +480,5 @@ class JSON_OPERATION:
 if __name__ == '__main__':
 	args = CLI()
 	# print(args.args)
+
 	

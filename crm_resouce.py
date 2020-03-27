@@ -6,8 +6,9 @@ import time
 @author: Zane
 @note: VersaTEL-iSCSI获取crm信息
 @time: 2020/03/11
+@uptime: 2020/03/27
 """
-class crmdata():
+class crm():
 	"""docstring for crm_data"""
 	def __init__(self):
 		
@@ -22,11 +23,6 @@ class crmdata():
 			        meta target-role=Started
 			primitive iscsi_target_test iSCSITarget \
 			        params iqn="iqn.2019-09.feixitek.com:1" implementation=lio-t portals="10.203.1.33:3260" \
-			        op start timeout=20 interval=0 \
-			        op stop timeout=20 interval=0 \
-			        op monitor interval=20 timeout=40
-			primitive iscsi_target_test1 iSCSITarget \
-			        params iqn="iqn.2019-09.feixitek.com:2" implementation=lio-t portals="10.203.1.33:3260" \
 			        op start timeout=20 interval=0 \
 			        op stop timeout=20 interval=0 \
 			        op monitor interval=20 timeout=40
@@ -124,10 +120,98 @@ class crmdata():
 		linstordata = self.resstatu
 		return linstordata
 
-	def get_data(self):
+	def get_data_crm(self):
 		crmconfig = subprocess.check_output('crm configure show',shell=True)
-		linstorres = subprocess.getoutput('linstor --no-color --no-utf8 r lv', shell=True)
+		print(crmconfig)
 
+	def get_data_linstor(self):	
+		linstorres = subprocess.getoutput('linstor --no-color --no-utf8 r lv')
+		return linstorres
+
+	def createres(self,res,hostiqn,targetiqn):
+		# print(res)
+		# print(hostiqn)
+		# print(targetiqn)
+		# resname = "addi"
+		# target_iqn = "\"iqn.2019-09.feixitek.com:aaa\""
+		# lunid = "2"
+		# path = "\"/dev/drbd1003\""
+		# allowed_initiators = "\"iqn.1993-08.org.debian:01:78ddb2d6247e iqn.1991-05.com.microsoft:win7mark\""
+		initiator = " ".join(hostiqn)
+		lunid = str(int(res[1][1:]))
+		op = " op start timeout=40 interval=0" \
+		   " op stop timeout=40 interval=0" \
+		   " op monitor timeout=40 interval=15"
+		meta = " meta target-role=Stopped"
+		mstr = "crm conf primitive " + res[0] \
+		    + " iSCSILogicalUnit params target_iqn=\"" + targetiqn \
+		    + "\" implementation=lio-t lun=" + lunid \
+		    + " path=\"" + res[2] \
+		    + "\" allowed_initiators=\"" + initiator +"\"" \
+		    + op + meta
+		print(mstr)
+		# createcrm = subprocess.check_output(mstr,shell=True)
+		# print ("create res down")
+
+
+	def delres(self, res):
+		# crm res stop <LUN_NAME>
+		# stopsub = subprocess.Popen("crm res stop " + res,shell=True)
+		# while True:
+		#     if stopsub.poll() == 0:
+		#         print("down")
+		#         break
+		#     else:
+		#         print("nodown")
+		#         time.sleep(2)
+		# print ("stop res")
+		# time.sleep(3)
+		print("crm res stop " + res)
+		n = 0
+		while n < 10:
+			n += 1
+			if self.resstate(res):
+				print(res + " is Started, Wait a moment...")
+				time.sleep(1)
+			else:
+				print(res + " is Stopped")
+				break
+		else:
+			print("Stop ressource " + res + " fail, Please try again.")
+			return False
+		# crm conf del <LUN_NAME>
+		# delsub = subprocess.check_output("crm conf del " + res,shell=True)
+		# print ("delete res")
+		print("crm conf del " + res)
+		return True
+
+
+	def createco(self, res, target):
+		# crm conf colocation <COLOCATION_NAME> inf: <LUN_NAME> <TARGET_NAME> 
+		print("crm conf colocation co_" + res + " inf: " + res + " " + target)
+		# coclocation = subprocess.check_output("crm conf colocation co_addi inf: addi t_test",shell=True)
+		# print("set coclocation")
+
+		# crm conf order <ORDER_NAME1> <TARGET_NAME> <LUN_NAME>
+		print("crm conf order or_" + res + " " + target + " " + res)
+		# order = subprocess.check_output("crm conf order order_addi t_test addi",shell=True)
+		# print("set order")
+
+
+	def resstart(self, res):
+		# crm res start <LUN_NAME>
+		print("crm res start " + res)
+		# start = subprocess.check_output("crm res start " + res,shell=True)
+
+
+	def resstate(self, res):
+		crm_config_statu = self.re_data()
+		for s in crm_config_statu[0]:
+			if s[0] == res:
+				if s[-1] == 'Stopped':
+					return False
+				else:
+					return True
 
 
 
