@@ -100,32 +100,27 @@ class crm():
 +---------------------------------------------------------------------------------------------------------------+'''
 
 	def re_data(self):
+		crmdata = str(self.get_data_crm())
 		plogical = re.compile(r'primitive\s(\w*)\s\w*\s\\\s*\w*\starget_iqn="([a-zA-Z0-9.:-]*)"\s[a-z=-]*\slun=(\d*)\spath="([a-zA-Z0-9/]*)"\sallowed_initiators="([a-zA-Z0-9.: -]+)"(?:.*\s*){2}meta target-role=(\w*)')
 		pvip = re.compile(r'primitive\s(\w*)\sIPaddr2\s\\\s*\w*\sip=([0-9.]*)\s\w*=(\d*)\s')
 		ptarget = re.compile(r'primitive\s(\w*)\s\w*\s\\\s*params\siqn="([a-zA-Z0-9.:-]*)"\s[a-z=-]*\sportals="([0-9.]*):\d*"\s\\')
-		redata = [plogical.findall(self.iscsistatu), pvip.findall(self.iscsistatu), ptarget.findall(self.iscsistatu)]
+		redata = [plogical.findall(crmdata), pvip.findall(crmdata), ptarget.findall(crmdata)]
+		print("get crm config data:")
+		print(redata)
 		return redata
-		# print(plogical.findall(iscsistatu))
-		# print(pvip.findall(iscsistatu))
-		# print(ptarget.findall(iscsistatu))
-
-		# strlogical=plogical.findall(iscsistatu)
-		# sdict = {}
-		# for s in strlogical:
-		# 	sdict.update({"iqn":s[1]})
-			#sdict.update({})
-		# print(sdict)
 
 	def lsdata(self):
 		linstordata = self.resstatu
 		return linstordata
 
 	def get_data_crm(self):
-		crmconfig = subprocess.check_output('crm configure show',shell=True)
-		print(crmconfig)
+		crmconfig = subprocess.getoutput('crm configure show')
+		print("do crm configure show")
+		return crmconfig
 
 	def get_data_linstor(self):	
 		linstorres = subprocess.getoutput('linstor --no-color --no-utf8 r lv')
+		print("do linstor r lv")
 		return linstorres
 
 	def createres(self,res,hostiqn,targetiqn):
@@ -150,22 +145,13 @@ class crm():
 		    + "\" allowed_initiators=\"" + initiator +"\"" \
 		    + op + meta
 		print(mstr)
-		# createcrm = subprocess.check_output(mstr,shell=True)
-		# print ("create res down")
+		createcrm = subprocess.check_output(mstr,shell=True)
+		print ("create res down")
 
 
 	def delres(self, res):
 		# crm res stop <LUN_NAME>
-		# stopsub = subprocess.Popen("crm res stop " + res,shell=True)
-		# while True:
-		#     if stopsub.poll() == 0:
-		#         print("down")
-		#         break
-		#     else:
-		#         print("nodown")
-		#         time.sleep(2)
-		# print ("stop res")
-		# time.sleep(3)
+		stopsub = subprocess.Popen("crm res stop " + res,shell=True)
 		print("crm res stop " + res)
 		n = 0
 		while n < 10:
@@ -180,8 +166,8 @@ class crm():
 			print("Stop ressource " + res + " fail, Please try again.")
 			return False
 		# crm conf del <LUN_NAME>
-		# delsub = subprocess.check_output("crm conf del " + res,shell=True)
-		# print ("delete res")
+		delsub = subprocess.Popen("crm conf del " + res,shell=True)
+		print ("delete res")
 		print("crm conf del " + res)
 		return True
 
@@ -189,19 +175,19 @@ class crm():
 	def createco(self, res, target):
 		# crm conf colocation <COLOCATION_NAME> inf: <LUN_NAME> <TARGET_NAME> 
 		print("crm conf colocation co_" + res + " inf: " + res + " " + target)
-		# coclocation = subprocess.check_output("crm conf colocation co_addi inf: addi t_test",shell=True)
-		# print("set coclocation")
+		coclocation = subprocess.check_output("crm conf colocation co_" + res + " inf: " + res + " " + target,shell=True)
+		print("set coclocation")
 
 		# crm conf order <ORDER_NAME1> <TARGET_NAME> <LUN_NAME>
 		print("crm conf order or_" + res + " " + target + " " + res)
-		# order = subprocess.check_output("crm conf order order_addi t_test addi",shell=True)
-		# print("set order")
+		order = subprocess.check_output("crm conf order or_" + res + " " + target + " " + res,shell=True)
+		print("set order")
 
 
 	def resstart(self, res):
 		# crm res start <LUN_NAME>
 		print("crm res start " + res)
-		# start = subprocess.check_output("crm res start " + res,shell=True)
+		start = subprocess.check_output("crm res start " + res,shell=True)
 
 
 	def resstate(self, res):

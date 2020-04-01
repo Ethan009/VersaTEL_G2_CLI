@@ -167,10 +167,11 @@ class CLI():
 	# host查询
 	def judge_hs(self, args, js):
 		if args.show == 'all' or args.show == None:
-			print("Host:")
 			hosts = js.get_data("Host")
+			print("	" + "{:<15}".format("Hostname") + "Iqn")
+			print("	" + "{:<15}".format("---------------") + "---------------")
 			for k in hosts:
-				print("	" + k + ": " + hosts[k])
+				print("	" + "{:<15}".format(k) + hosts[k])
 		else:
 			if js.check_key('Host',args.show):
 				print(args.show, ":", js.get_data('Host').get(args.show))
@@ -192,17 +193,18 @@ class CLI():
 	# disk查询
 	def judge_ds(self, args, js):
 		cd = crm()
-		data = cd.lsdata()
-		# data = cd.get_data_linstor()
+		# data = cd.lsdata()
+		data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
 		disks = {}
 		for d in linstorlv.get_data():
 			disks.update({d[1]:d[5]})
-		# js.up_data('Disk',disks)
+		js.up_data('Disk',disks)
 		if args.show == 'all' or args.show == None:
-			print("Disk:")
+			print("	" + "{:<15}".format("Diskname") + "Path")
+			print("	" + "{:<15}".format("---------------") + "---------------")
 			for k in disks:
-				print("	" + "{:<10}".format(k) + ": " + disks[k])
+				print("	" + "{:<15}".format(k) + disks[k])
 		else:
 			if js.check_key('Disk',args.show):
 				print(args.show, ":", js.get_data('Disk').get(args.show))
@@ -234,6 +236,7 @@ class CLI():
 			print("Hostgroup:")
 			hostgroups = js.get_data("HostGroup")
 			for k in hostgroups:
+				print("	" + "---------------")
 				print("	" + k + ":")
 				for v in hostgroups[k]:
 					print("		" + v)
@@ -281,6 +284,7 @@ class CLI():
 			print("Diskgroup:")
 			diskgroups = js.get_data("DiskGroup")
 			for k in diskgroups:
+				print("	" + "---------------")
 				print("	" + k + ":")
 				for v in diskgroups[k]:
 					print("		" + v)
@@ -320,9 +324,10 @@ class CLI():
 			if js.check_value('Map',args.dg) == True:
 				print("The diskgroup already map")
 			mapdata = self.map_data(js, crmdata, args.hg, args.dg)
+			print(mapdata)
 			self.map_crm_c(mapdata)
-			# js.creat_data('Map',args.mapname,[args.hg,args.dg])
-			# print("Create success!")
+			js.creat_data('Map',args.mapname,[args.hg,args.dg])
+			print("Create success!")
 
 	# map查询
 	def judge_ms(self, args, js):
@@ -331,6 +336,7 @@ class CLI():
 			print("Map:")
 			maps = js.get_data("Map")
 			for k in maps:
+				print("	" + "---------------")
 				print("	" + k + ":")
 				for v in maps[k]:
 					print("		" + v)
@@ -354,8 +360,8 @@ class CLI():
 			print(js.get_data('Map').get(args.mapname),"will probably be affected ")
 			resname = self.map_data_d(js, args.mapname)
 			self.map_crm_d(resname)
-			# js.delete_data('Map',args.mapname)
-			# print("Delete success!")
+			js.delete_data('Map',args.mapname)
+			print("Delete success!")
 		else:
 			print("Fail! Can't find " + args.mapname)
 
@@ -377,9 +383,11 @@ class CLI():
 		mapdata.update({'host_iqn':hostiqn})
 		disk = js.get_data('DiskGroup').get(dg)
 		cd = crm()
-		data = cd.lsdata()
-		# data = cd.get_data_linstor()
+		# data = cd.lsdata()
+		data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
+		print("get linstor r lv data:")
+		print(linstorlv)
 		diskd = {}
 		for d in linstorlv.get_data():
 			for i in disk:
