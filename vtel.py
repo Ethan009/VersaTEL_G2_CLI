@@ -2,11 +2,12 @@
 
 import argparse
 import sys
-import view
+# import view
 from stor_cmds import Action as stor_action
 import usage
 import linstordb
 import cli_socketclient
+from cli_socketclient import SocketSend
 
 #多节点创建resource时，storapoo多于node的异常类
 class NodeLessThanSPError(Exception):
@@ -23,7 +24,7 @@ class CLI():
 
 
     def parser_vtel(self):
-        self.vtel = argparse.ArgumentParser(prog='vtel',add_help=False)
+        self.vtel = argparse.ArgumentParser(prog='vtel')
         sub_vtel = self.vtel.add_subparsers(dest='vtel_sub')
 
         # add all sub parse
@@ -42,6 +43,7 @@ class CLI():
         self.stor_snap = sub_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
         self.stor_gui = sub_stor.add_parser('gui',help='for GUI')
         self.stor_gui.add_argument('-db',help='get linstor DB',action='store_true',dest='db',default=False)
+        self.stor_gui.add_argument('-vg',help='get vg',action='store_true',dest='vg',default=False)
 
         ###node
         sub_node = self.stor_node.add_subparsers(dest='node_sub')
@@ -174,7 +176,7 @@ class CLI():
 
         def node_create():
             if args.gui:
-                print('zhixing gui')
+                SocketSend.send_result(SocketSend(),stor_action.create_node,args.node, args.ip, args.nodetype)
             elif args.node and args.nodetype and args.ip:
                 stor_action.create_node(args.node, args.ip, args.nodetype)
             else:
@@ -508,13 +510,13 @@ class CLI():
             pass
 
 
-        if self.args.snap_sub == 'create':
+        if args.snap_sub == 'create':
             snap_create()
-        elif self.args.snap_sub == 'modify':
+        elif args.snap_sub == 'modify':
             snap_modify()
-        elif self.args.snap_sub == 'delete':
+        elif args.snap_sub == 'delete':
             snap_delete()
-        elif self.args.snap_sub == 'show':
+        elif args.snap_sub == 'show':
             snap_show()
         else:
             self.stor_snap.print_help()
@@ -524,10 +526,18 @@ class CLI():
         if self.args.db:
             mes = cli_socketclient.SocketSend()
             mes.send_result(mes.sql_script)#get sql_scipt
+        # elif self.args.vg:
+            # from test import get_vg
+            # # mes = cli_socketclient.SocketSend()
+            # # cli_socketclient.send_test(get_vg)
+            # get_vg()
+
 
 
     def judge(self):
-        if self.args.vtel_sub == 'stor':
+        args = self.args
+
+        if args.vtel_sub == 'stor':
             if self.args.stor_sub in ['node','n']:
                 self.case_node()
             elif self.args.stor_sub in ['resource','r']:

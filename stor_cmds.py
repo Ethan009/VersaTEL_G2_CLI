@@ -6,22 +6,27 @@ from collections import OrderedDict
 
 
 def execute_cmd(cmd):
-    action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    result = action.stdout
-    if reg.judge_cmd_result_war(str(result)):
-        print(reg.get_war_mes(result.decode('utf-8')))
+    action = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = action.stdout.read()
     if reg.judge_cmd_result_suc(str(result)):
         return True
     elif reg.judge_cmd_result_err(str(result)):
         print(result.decode('utf-8'))
-        return
+        return result.decode()
+    if reg.judge_cmd_result_war(str(result)):
+        messege_war = reg.get_war_mes(result.decode('utf-8'))
+        print(messege_war)
+        return messege_war
 
 
 def print_excute_result(cmd):
-    if execute_cmd(cmd):
+    result = execute_cmd(cmd)
+    if result == True:
         print('SUCCESS')
+        return True
     else:
         print('Fail')
+        return result
 
 
 class Action():
@@ -40,27 +45,34 @@ class Action():
     @staticmethod
     def linstor_create_rd(res):
         cmd_rd = 'linstor rd c %s' %res
-        return execute_cmd(cmd_rd)
+        result = execute_cmd(cmd_rd)
+        if result == True:
+            return True
+        else:
+            return result
 
     @staticmethod
     def linstor_create_vd(res,size):
         cmd_vd = 'linstor vd c %s %s' % (res, size)
-        if execute_cmd(cmd_vd):
+        result = execute_cmd(cmd_vd)
+        if result == True:
             return True
         else:
             Action.linstor_delete_rd(res)
+            return result
 
     #创建resource 自动
     @staticmethod
     def create_res_auto(res,size,num):
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
         if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
-            if execute_cmd(cmd):
-                print('111')
+            result = execute_cmd(cmd)
+            if result == True:
                 print('SUCCESS')
                 return True
             else:
                 Action.linstor_delete_rd(res)
+                return result
 
         # 创建resource 手动
     @staticmethod
@@ -70,6 +82,8 @@ class Action():
         def print_fail_node():
             if len(flag.keys()):
                 print('Creation failure on', *flag.keys(), sep=' ')
+                for node,cause in flag.items():
+                    print(node,':',cause)
                 return flag
             else:
                 return True
@@ -92,31 +106,28 @@ class Action():
                 dict_fail = {node_one: str_fail_cause}
                 flag.update(dict_fail)
 
+
+
         if len(stp) == 1:
-            if Action.linstor_create_rd(res) and Action.linstor_create_vd(res, size):
+            if Action.linstor_create_rd(res) is True and Action.linstor_create_vd(res, size) is True:
                 for node_one in node:
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
                     create_resource(cmd)
-                    whether_delete_rd()
+                whether_delete_rd()
                 return print_fail_node()
+            else:
+                return ('The ResourceDefinition already exists') #need to be prefect
         elif len(node) == len(stp):
-            if Action.linstor_create_rd(res) and Action.linstor_create_vd(res, size):
+            if Action.linstor_create_rd(res) is True and Action.linstor_create_vd(res, size) is True:
                 for node_one, stp_one in zip(node, stp):
                     cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
                     create_resource(cmd)
-                    whether_delete_rd()
+                whether_delete_rd()
                 return print_fail_node()
-
-
-        # if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
-            # action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # result = action.stdout
-            # if reg.judge_cmd_result_suc(str(result)):
-            #     print('SUCCESS')
-            # elif reg.judge_cmd_result_err(str(result)):
-            #     Action.linstor_delete_rd(res)
-            #     print('Fail')
-            #     print(result.decode('utf-8'))
+            else:
+                return ('The ResourceDefinition already exists')
+        else:
+            print('The number of Node and Storage pool do not meet the requirements')
 
 
 
@@ -124,28 +135,41 @@ class Action():
     @staticmethod
     def add_mirror_auto(res,num):
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
-        execute_cmd(cmd)
+        return print_excute_result(cmd)
 
     @staticmethod
     def add_mirror_manual(res,node,stp):
+        flag = OrderedDict()
+
+        def print_fail_node():
+            if len(flag.keys()):
+                print('Creation failure on', *flag.keys(), sep=' ')
+                return flag
+            else:
+                return True
+
+
         def add_mirror():
             action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             result = action.stdout
             if reg.judge_cmd_result_suc(str(result)):
                 print('Resource %s was successfully created on Node %s'%(res,node_one))
             elif reg.judge_cmd_result_err(str(result)):
-                print('Fail')
-                print(result.decode('utf-8'))
+                str_fail_cause = reg.get_err_detailes(result.decode('utf-8'))
+                dict_fail = {node_one: str_fail_cause}
+                flag.update(dict_fail)
 
 
         if len(stp) == 1:
             for node_one in node:
                 cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp[0])
                 add_mirror()
+            return print_fail_node()
         elif len(node) == len(stp):
             for node_one,stp_one in zip(node,stp):
                 cmd = 'linstor resource create %s %s --storage-pool %s' % (node_one, res, stp_one)
                 add_mirror()
+            return print_fail_node()
         else:
             print('sp数量为1或者与node相等')
 
@@ -155,19 +179,19 @@ class Action():
     @staticmethod
     def create_res_diskless(node,res):
         cmd = 'linstor r c %s %s --diskless' %(node,res)
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
     #删除resource,指定节点 -- ok
     @staticmethod
     def delete_resource_des(node,res):
         cmd = 'linstor resource delete %s %s' %(node,res)
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
     #删除resource，全部节点 -- ok
     @staticmethod
     def delete_resource_all(res):
         cmd = 'linstor resource-definition delete %s' %res
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
     #创建storagepool  -- ok
     @staticmethod
@@ -180,25 +204,26 @@ class Action():
         if reg.judge_cmd_result_err(str(result)):
             if reg.get_err_not_vg(str(result),node,vg):
                 print(reg.get_err_not_vg(str(result),node,vg))
-                subprocess.check_output('linstor storage-pool delete %s %s'%(node,stp),shell=True)#未测试
+                subprocess.check_output('linstor storage-pool delete %s %s'%(node,stp),shell=True)
             else:
                 print(result.decode('utf-8'))
-                return
+                return result.decode()
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
+            return True
 
 
     @staticmethod
     def create_storagepool_thinlv(node,stp,tlv):
         cmd = 'linstor storage-pool create lvmthin %s %s %s' %(node,stp,tlv)
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
 
     #删除storagepool -- ok
     @staticmethod
     def delete_storagepool(node,stp):
         cmd = 'linstor storage-pool delete %s %s' %(node,stp)
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
 
     #创建集群节点
@@ -209,13 +234,13 @@ class Action():
         if nt not in nt_value:
             print('node type error,choose from ''Combined','Controller','Auxiliary','Satellite''')
         else:
-            print_excute_result(cmd)
+            return print_excute_result(cmd)
 
     #删除node
     @staticmethod
     def delete_node(node):
         cmd = 'linstor node delete %s' %node
-        print_excute_result(cmd)
+        return print_excute_result(cmd)
 
     #确认删除函数
     @staticmethod

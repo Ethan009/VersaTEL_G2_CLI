@@ -5,6 +5,7 @@ import prettytable as pt
 from functools import wraps
 import sqlite3,socket,subprocess,datetime,threading
 import multiprocessing as mp
+import regex
 
 def nowtime():
     time = datetime.datetime.now()
@@ -50,6 +51,21 @@ class LINSTORDB():
         State varchar(20)
         );'''
 
+    crt_vgtb_sql = '''
+        create table if not exists vgtb(
+        id integer primary key,
+        VG varchar(20),
+        VSize varchar(20),
+        VFree varchar(20)
+        );'''
+
+    crt_thinlvtb_sql = '''
+        create table if not exists thinlvtb(
+        id integer primary key,
+        LV varchar(20),
+        VG varchar(20),
+        LSize varchar(20)
+        );'''
 
     replace_stb_sql = '''
     replace into storagepooltb
@@ -95,6 +111,28 @@ class LINSTORDB():
             )
         values(?,?,?,?,?)
     '''
+
+    replace_vgtb_sql = '''
+        replace into vgtb
+        (
+            id,
+            VG,
+            VSize,
+            VFree
+            )
+        values(?,?,?,?)
+    '''
+
+    replace_thinlvtb_sql = '''
+        replace into thinlvtb
+        (
+            id,
+            LV,
+            VG,
+            LSize
+            )
+        values(?,?,?,?)
+    '''
     #连接数据库,创建光标对象
     def __init__(self):
         #linstor.db
@@ -103,9 +141,11 @@ class LINSTORDB():
 
     #执行获取数据，删除表，创建表，插入数据
     def rebuild_tb(self):
+        self.drop_tb()
         self.create_tb()
+        self.get_vg()
+        self.get_thinlv()
         self.get_output()
-        # self.drop_tb()
         # self.create_tb()
         # self.run_insert()
         self.con.commit()
@@ -154,7 +194,20 @@ class LINSTORDB():
         # self.get_res()
         # self.get_sp()
         end = nowtime()
+
         print(end-start)
+    def get_vg(self):
+        result_vg = subprocess.Popen('vgs',shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        output_vg = result_vg.stdout.read().decode()
+        vg = regex.refining_vg(output_vg)
+        self.rep_vgtb(vg)
+
+
+    def get_thinlv(self):
+        result_thinlv = subprocess.Popen('lvs',shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        output_thinlv = result_thinlv.stdout.read().decode()
+        thinlv = regex.refining_thinlv(output_thinlv)
+        self.rep_thinlvtb(thinlv)
 
     def get_node(self):
         result_node = subprocess.Popen('linstor --no-color --no-utf8 n l', shell=True, stdout=subprocess.PIPE,
@@ -210,6 +263,8 @@ class LINSTORDB():
 
     #创建表
     def create_tb(self):
+        self.cur.execute(self.crt_vgtb_sql)
+        self.cur.execute(self.crt_thinlvtb_sql)
         self.cur.execute(self.crt_sptb_sql)#检查是否存在表，如不存在，则新创建表
         self.cur.execute(self.crt_rtb_sql)
         self.cur.execute(self.crt_ntb_sql)
@@ -220,9 +275,13 @@ class LINSTORDB():
         drp_storagepooltb_sql = "drop table if exists storagepooltb"#sql语句
         drp_resourcetb_sql = "drop table if exists resourcetb"
         drp_nodetb_sql = "drop table if exists nodetb"
+        drp_vgtb_sql = "drop table if exists vgtb"
+        drp_thinlvtb_sql = "drop table if exists thinlvtb"
         self.cur.execute(drp_storagepooltb_sql)#检查是否存在表，如存在，则删除
         self.cur.execute(drp_resourcetb_sql)
         self.cur.execute(drp_nodetb_sql)
+        self.cur.execute(drp_vgtb_sql)
+        self.cur.execute(drp_thinlvtb_sql)
         self.con.commit()
 
 
@@ -254,13 +313,25 @@ class LINSTORDB():
             node, nodetype, addr, state = data
             self.cur.execute(self.replace_ntb_sql, (id, node, nodetype, addr, state))
 
+    def rep_vgtb(self,list_data):
+        list_id = range(len(list_data))
+        for i,data in zip(list_id,list_data):
+            id = i+1
+            VG,VSize,VFree = data
+            self.cur.execute(self.replace_vgtb_sql,(id,VG,VSize,VFree))
+
+    def rep_thinlvtb(self, list_data):
+        list_id = range(len(list_data))
+        for i, data in zip(list_id, list_data):
+            id = i + 1
+            LV,VG,LSize= data
+            self.cur.execute(self.replace_thinlvtb_sql, (id,LV,VG,LSize))
 
     # def run_insert(self):
     #     # self.rep_storagepooltb()
     #     # self.rep_resourcetb()
     #     # self.rep_nodetb()
     #     self.con.commit()
-
 
     def data_base_dump(self):
         cur = self.cur
@@ -269,6 +340,10 @@ class LINSTORDB():
         SQL_script = con.iterdump()
         cur.close()
         return "\n".join(SQL_script)
+
+
+
+
 
 
     # def conn(self):
@@ -703,4 +778,4 @@ class OutputData(DataProcess):
 # c = b.data_base_dump()
 # t2 = datetime.datetime.now()
 # print(t2 - t1)
-# print(c)
+# print()

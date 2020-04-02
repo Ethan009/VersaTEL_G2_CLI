@@ -2,8 +2,8 @@
 import socketserver,socket,subprocess
 
 host_port = 12129
-# host_ip = "192.168.36.61"
-host_ip = "10.203.1.198"
+host_ip = "192.168.36.61"
+# host_ip = "10.203.1.198"
 byteData = b'null'
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -25,6 +25,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 self.request.send(b'ok')
                 sql_script = self.request.recv(8192)
                 byteData = sql_script
+                print(byteData)
                 self.request.send(b'over')
             else:
                 pass
