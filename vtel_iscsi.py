@@ -166,6 +166,7 @@ class CLI():
 
 	# host查询
 	def judge_hs(self, args, js):
+		print(type(args))
 		if args.show == 'all' or args.show == None:
 			hosts = js.get_data("Host")
 			print("	" + "{:<15}".format("Hostname") + "Iqn")
