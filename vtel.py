@@ -83,7 +83,7 @@ class CLI():
         ###stor node delete
         self.node_delete.add_argument('node', metavar='NODE',action='store', help=' Name of the node to remove')
         self.node_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
-
+        self.node_delete.add_argument('-gui', dest='gui', action='store_true', help=argparse.SUPPRESS, default=False)
 
         ###stor node show
         self.node_show.add_argument('node', metavar='NODE',help='Print information about the node in LINSTOR cluster', action='store', nargs='?', default=None)
@@ -123,6 +123,7 @@ class CLI():
         self.resource_delete.add_argument('resource',metavar='RESOURCE',action='store', help='Name of the resource to delete')
         self.resource_delete.add_argument('-n', dest='node', action='store', help='Name of the node')
         self.resource_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
+        self.resource_delete.add_argument('-gui', dest='gui', action='store_true', help=argparse.SUPPRESS, default=False)
 
         ###stor resource show
         self.resource_show.add_argument('resource',metavar='RESOURCE',help='Print information about the resource in LINSTOR cluster', action='store', nargs='?')
@@ -142,7 +143,7 @@ class CLI():
         self.storagepool_delete.add_argument('storagepool',metavar='STORAGEPOOL',help='Name of the storage pool to delete', action='store')
         self.storagepool_delete.add_argument('-n', dest='node', action='store', help='Name of the Node where the storage pool exists',required=True)
         self.storagepool_delete.add_argument('-y', dest='yes', action='store_true',help='Skip to confirm selection', default=False)
-
+        self.storagepool_delete.add_argument('-gui', dest='gui', action='store_true', help=argparse.SUPPRESS, default=False)
 
         ###stor storgagepool show
         self.storagepool_show.add_argument('storagepool',metavar='STORAGEPOOL',help='Print information about the storage pool in LINSTOR cluster', action='store',nargs='?')
@@ -186,15 +187,22 @@ class CLI():
             pass
 
         def node_delete():
+            def excute():
+                if args.gui:
+                    print('for gui delete node')
+                else:
+                    stor_action.delete_node(args.node)
+
+
             def _delete_comfirm():#命名，是否删除
                 if stor_action.confirm_del():
-                    stor_action.delete_node(args.node)
+                    excute()
                 else:
                     print('Delete canceled')
 
             def _skip_confirm():#是否跳过确认
                 if args.yes:
-                    stor_action.delete_node(args.node)
+                    excute()
                 else:
                     _delete_comfirm()
 
@@ -411,24 +419,29 @@ class CLI():
 
         # resource删除判断
         def resource_delete():
+            def excute():#判断是否指定节点
+                if args.node:
+                    if args.gui:
+                        print('for gui')
+                    else:
+                        stor_action.delete_resource_des(args.node, args.resource)
+                elif not args.node:
+                    if args.gui:
+                        print('for gui')
+                    else:
+                        stor_action.delete_resource_all(args.resource)
 
             def _delete_comfirm():#命名，是否删除
                 if stor_action.confirm_del():
-                    _designated_node()
+                    excute()
                 else:
                     print('Delete canceled')
 
             def _skip_confirm():#是否跳过确认
                 if args.yes:
-                    _designated_node()
+                    excute()
                 else:
                     _delete_comfirm()
-
-            def _designated_node():#判断是否指定节点
-                if args.node:
-                    stor_action.delete_resource_des(args.node, args.resource)
-                elif not args.node:
-                    stor_action.delete_resource_all(args.resource)
 
             _skip_confirm() if args.resource else parser_delete.print_help()
 
@@ -500,15 +513,21 @@ class CLI():
 
 
         def storagepool_delete():
+            def excute():
+                if args.gui:
+                    print('for gui')
+                else:
+                    stor_action.delete_storagepool(args.node, args.storagepool)
+
             def _delete_comfirm():#命名，是否删除
                 if stor_action.confirm_del():
-                    stor_action.delete_storagepool(args.node, args.storagepool)
+                    excute()
                 else:
                     print('Delete canceled')
 
             def _skip_confirm():#是否跳过确认
                 if args.yes:
-                    stor_action.delete_storagepool(args.node, args.storagepool)
+                    excute()
                 else:
                     _delete_comfirm()
 
