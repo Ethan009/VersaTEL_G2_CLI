@@ -7,7 +7,6 @@ from stor_cmds import Action as stor_action
 import usage
 import linstordb
 import cli_socketclient
-from cli_socketclient import SocketSend
 
 #多节点创建resource时，storapoo多于node的异常类
 class NodeLessThanSPError(Exception):
@@ -176,7 +175,8 @@ class CLI():
 
         def node_create():
             if args.gui:
-                SocketSend.send_result(SocketSend(),stor_action.create_node,args.node, args.ip, args.nodetype)
+                handle = cli_socketclient.SocketSend()
+                handle.send_result(stor_action.create_node,args.node, args.ip, args.nodetype)
             elif args.node and args.nodetype and args.ip:
                 stor_action.create_node(args.node, args.ip, args.nodetype)
             else:
@@ -264,8 +264,15 @@ class CLI():
                 if any(list_normal_forbid):
                     return
                 if all(list_auto_required) and not any(list_manual_required):
-                    stor_action.create_res_auto(args.resource, args.size, args.num)
-                    return True
+                    #For GUI
+                    if args.gui:
+                        handle = cli_socketclient.SocketSend()
+                        handle.send_result(stor_action.create_res_auto,args.resource, args.size, args.num)
+                        return True
+                    #CLI
+                    else:
+                        stor_action.create_res_auto(args.resource, args.size, args.num)
+                        return True
                 elif all(list_manual_required) and not any(list_auto_required):
                     try:
                         is_args_correct()
@@ -273,8 +280,15 @@ class CLI():
                         print('The number of nodes and storage pools do not meet the requirements')
                         return True
                     else:
-                        stor_action.create_res_manual(args.resource,args.size,args.node,args.storagepool)
-                        return True
+                        #For GUI
+                        if args.gui:
+                            handle = cli_socketclient.SocketSend()
+                            handle.send_result(stor_action.create_res_manual,args.resource,args.size,args.node,args.storagepool)
+                            return True
+                        #CLI
+                        else:
+                            stor_action.create_res_manual(args.resource,args.size,args.node,args.storagepool)
+                            return True
 
             #创建resource的diskless资源条件判断，符合则执行
             def create_diskless_resource():
@@ -282,8 +296,13 @@ class CLI():
                 if not args.node:
                     return
                 if not any(list_diskless_forbid):
-                    stor_action.create_res_diskless(args.node, args.resource)
-                    return True
+                    if args.gui:
+                        handle = cli_socketclient.SocketSend()
+                        handle.send_result(stor_action.create_res_diskless,args.node, args.resource)
+                        return True
+                    else:
+                        stor_action.create_res_diskless(args.node, args.resource)
+                        return True
 
             #添加mirror
             def add_resource_mirror():
@@ -294,8 +313,14 @@ class CLI():
                 if any(list_add_mirror_forbid):
                     return
                 if all(list_auto_required) and not any(list_manual_required):
-                    stor_action.add_mirror_auto(args.resource,args.num)
-                    return True
+                    #For GUI
+                    if args.gui:
+                        handle = cli_socketclient.SocketSend()
+                        handle.send_result(stor_action.add_mirror_auto,args.resource,args.num)
+                        return True
+                    else:
+                        stor_action.add_mirror_auto(args.resource,args.num)
+                        return True
                 elif all(list_manual_required) and not any(list_auto_required):
                     try:
                         is_args_correct()
@@ -303,30 +328,25 @@ class CLI():
                         print('The number of nodes does not meet the requirements')
                         return True
                     else:
-                        stor_action.add_mirror_manual(args.resource,args.node,args.storagepool)
-                        return True
+                        #For GUI
+                        if args.gui:
+                            handle = cli_socketclient.SocketSend()
+                            handle.send_result(stor_action.add_mirror_manual,args.resource,args.node,args.storagepool)
+                            return True
+                        else:
+                            stor_action.add_mirror_manual(args.resource,args.node,args.storagepool)
+                            return True
 
 
             # 总执行
-            if args.gui:
-                if create_normal_resource():
-                    pass
-                elif create_diskless_resource():
-                    pass
-                elif add_resource_mirror():
-                    pass
-                else:
-                    parser_create.print_help()
-
+            if create_normal_resource():
+                pass
+            elif create_diskless_resource():
+                pass
+            elif add_resource_mirror():
+                pass
             else:
-                if create_normal_resource():
-                    pass
-                elif create_diskless_resource():
-                    pass
-                elif add_resource_mirror():
-                    pass
-                else:
-                    parser_create.print_help()
+                parser_create.print_help()
 
 
 
@@ -391,21 +411,43 @@ class CLI():
 
         # resource删除判断
         def resource_delete():
-            if args.resource:
+
+            def _delete_comfirm():#命名，是否删除
+                if stor_action.confirm_del():
+                    _designated_node()
+                else:
+                    print('Delete canceled')
+
+            def _skip_confirm():#是否跳过确认
+                if args.yes:
+                    _designated_node()
+                else:
+                    _delete_comfirm()
+
+            def _designated_node():#判断是否指定节点
                 if args.node:
-                    if args.yes:
-                        stor_action.delete_resource_des(args.node, args.resource)
-                    else:
-                        if stor_action.confirm_del():
-                            stor_action.delete_resource_des(args.node, args.resource)
+                    stor_action.delete_resource_des(args.node, args.resource)
                 elif not args.node:
-                    if args.yes:
-                        stor_action.delete_resource_all(args.resource)
-                    else:
-                        if stor_action.confirm_del():
-                            stor_action.delete_resource_all(args.resource)
-            else:
-                parser_delete.print_help()
+                    stor_action.delete_resource_all(args.resource)
+
+            _skip_confirm() if args.resource else parser_delete.print_help()
+
+
+            # if args.resource:
+            #     if args.node:
+            #         if args.yes:
+            #             stor_action.delete_resource_des(args.node, args.resource)
+            #         else:
+            #             if stor_action.confirm_del():
+            #                 stor_action.delete_resource_des(args.node, args.resource)
+            #     elif not args.node:
+            #         if args.yes:
+            #             stor_action.delete_resource_all(args.resource)
+            #         else:
+            #             if stor_action.confirm_del():
+            #                 stor_action.delete_resource_all(args.resource)
+            # else:
+            #     parser_delete.print_help()
 
         def resource_show():
             tb = linstordb.OutputData()
@@ -434,13 +476,19 @@ class CLI():
         parser_delete = self.storagepool_delete
 
         def storagepool_create():
-            if args.gui:
-                print('zhxiing gui')
-            elif args.storagepool and args.node:
+            if args.storagepool and args.node:
                 if args.lvm:
-                    stor_action.create_storagepool_lvm(args.node, args.storagepool, args.lvm)
+                    if args.gui:
+                        handle = cli_socketclient.SocketSend()
+                        handle.send_result(stor_action.create_storagepool_lvm,args.node, args.storagepool, args.lvm)
+                    else:
+                        stor_action.create_storagepool_lvm(args.node, args.storagepool, args.lvm)
                 elif args.tlv:
-                    stor_action.create_storagepool_thinlv(args.node, args.storagepool, args.tlv)
+                    if args.gui:
+                        handle = cli_socketclient.SocketSend()
+                        handle.send_result(stor_action.create_storagepool_thinlv,args.node, args.storagepool, args.tlv)
+                    else:
+                        stor_action.create_storagepool_thinlv(args.node, args.storagepool, args.tlv)
                 else:
                     parser_create.print_help()
             else:
@@ -452,17 +500,20 @@ class CLI():
 
 
         def storagepool_delete():
-            if args.storagepool:
-                if args.node:
-                    if args.yes:
-                        stor_action.delete_storagepool(args.node, args.storagepool)
-                    else:
-                        if stor_action.confirm_del():
-                            stor_action.delete_storagepool(args.node, args.storagepool)
+            def _delete_comfirm():#命名，是否删除
+                if stor_action.confirm_del():
+                    stor_action.delete_storagepool(args.node, args.storagepool)
                 else:
-                    parser_delete.print_help()
-            else:
-                parser_delete.print_help()
+                    print('Delete canceled')
+
+            def _skip_confirm():#是否跳过确认
+                if args.yes:
+                    stor_action.delete_storagepool(args.node, args.storagepool)
+                else:
+                    _delete_comfirm()
+
+            _skip_confirm() if args.storagepool else parser_delete.print_help()
+
 
         def storagepool_show():
             tb = linstordb.OutputData()
@@ -526,11 +577,6 @@ class CLI():
         if self.args.db:
             mes = cli_socketclient.SocketSend()
             mes.send_result(mes.sql_script)#get sql_scipt
-        # elif self.args.vg:
-            # from test import get_vg
-            # # mes = cli_socketclient.SocketSend()
-            # # cli_socketclient.send_test(get_vg)
-            # get_vg()
 
 
 
