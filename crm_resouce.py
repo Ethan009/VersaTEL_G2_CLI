@@ -1,3 +1,4 @@
+#coding=utf-8
 import re
 import subprocess
 import time
@@ -6,7 +7,7 @@ import time
 @author: Zane
 @note: VersaTEL-iSCSI获取crm信息
 @time: 2020/03/11
-@uptime: 2020/03/27
+@uptime: 2020/04/07
 """
 class crm():
 	"""docstring for crm_data"""
@@ -145,49 +146,75 @@ class crm():
 		    + "\" allowed_initiators=\"" + initiator +"\"" \
 		    + op + meta
 		print(mstr)
-		createcrm = subprocess.check_output(mstr,shell=True)
-		print ("create res down")
+		createcrm = subprocess.call(mstr,shell=True)
+		print ("call",mstr)
+		if createcrm == 0:
+			print("create iSCSILogicalUnit success")
+			return True
+		else:
+			return False
 
 
 	def delres(self, res):
 		# crm res stop <LUN_NAME>
-		stopsub = subprocess.Popen("crm res stop " + res,shell=True)
-		print("crm res stop " + res)
-		n = 0
-		while n < 10:
-			n += 1
-			if self.resstate(res):
-				print(res + " is Started, Wait a moment...")
-				time.sleep(1)
+		stopsub = subprocess.call("crm res stop " + res,shell=True)
+		if stopsub == 0:
+			print("crm res stop " + res)
+			n = 0
+			while n < 10:
+				n += 1
+				if self.resstate(res):
+					print(res + " is Started, Wait a moment...")
+					time.sleep(1)
+				else:
+					print(res + " is Stopped")
+					break
 			else:
-				print(res + " is Stopped")
-				break
+				print("Stop ressource " + res + " fail, Please try again.")
+				return False
+			# crm conf del <LUN_NAME>
+			delsub = subprocess.call("crm conf del " + res,shell=True)
+			if delsub == 0:
+				print("crm conf del " + res)
+				return True
+			else:
+				print("crm delete fail")
+				return False
 		else:
-			print("Stop ressource " + res + " fail, Please try again.")
+			print("crm res stop fail")
 			return False
-		# crm conf del <LUN_NAME>
-		delsub = subprocess.Popen("crm conf del " + res,shell=True)
-		print ("delete res")
-		print("crm conf del " + res)
-		return True
 
 
 	def createco(self, res, target):
 		# crm conf colocation <COLOCATION_NAME> inf: <LUN_NAME> <TARGET_NAME> 
 		print("crm conf colocation co_" + res + " inf: " + res + " " + target)
-		coclocation = subprocess.check_output("crm conf colocation co_" + res + " inf: " + res + " " + target,shell=True)
-		print("set coclocation")
+		coclocation = subprocess.call("crm conf colocation co_" + res + " inf: " + res + " " + target, shell=True)
+		if coclocation == 0:
+			print("set coclocation")
+			return True
+		else:
+			return False
 
+
+	def createor(self, res, target):
 		# crm conf order <ORDER_NAME1> <TARGET_NAME> <LUN_NAME>
 		print("crm conf order or_" + res + " " + target + " " + res)
-		order = subprocess.check_output("crm conf order or_" + res + " " + target + " " + res,shell=True)
-		print("set order")
+		order = subprocess.call("crm conf order or_" + res + " " + target + " " + res, shell=True)
+		if order == 0:
+			print("set order")
+			return True
+		else:
+			return False
 
 
 	def resstart(self, res):
 		# crm res start <LUN_NAME>
 		print("crm res start " + res)
-		start = subprocess.check_output("crm res start " + res,shell=True)
+		start = subprocess.call("crm res start " + res,shell=True)
+		if start == 0:
+			return True
+		else:
+			return False
 
 
 	def resstate(self, res):

@@ -5,6 +5,7 @@ import os
 from pprint import pprint
 from crm_resouce import crm
 from getlinstor import GetLinstor
+from cli_socketclient import SocketSend
 """
 @author: Zane
 @note: VersaTEL-iSCSI
@@ -48,9 +49,6 @@ class CLI():
 		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
 		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
 		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
-		# self.iscsi_gui = sub_iscsi.add_parser('gui',help='iscsi gui')
-		# self.iscsi_gui.add_argument('i',help='gui data')
-
 
 		### iscsi host
 		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
@@ -84,6 +82,7 @@ class CLI():
 		#### iscsi host argument
 		self.iscsi_host_create.add_argument('iqnname',action='store',help='host_name')
 		self.iscsi_host_create.add_argument('iqn',action='store',help='host_iqn')
+		self.iscsi_host_create.add_argument('-gui',help='iscsi gui',nargs='?',default='cmd')
 		self.iscsi_host_show.add_argument('show',action='store',help='host show [host_name]',nargs='?',default='all')	
 		self.iscsi_host_delete.add_argument('iqnname',action='store',help='host_name',default=None)
 
@@ -93,12 +92,14 @@ class CLI():
 		#### iscsi hostgroup argument
 		self.iscsi_hostgroup_create.add_argument('hostgroupname',action='store',help='hostgroup_name')
 		self.iscsi_hostgroup_create.add_argument('iqnname',action='store',help='host_name',nargs='+')
+		self.iscsi_hostgroup_create.add_argument('-gui',help='iscsi gui',nargs='?',default='cmd')
 		self.iscsi_hostgroup_show.add_argument('show',action='store',help='hostgroup show [hostgroup_name]',nargs='?',default='all')
 		self.iscsi_hostgroup_delete.add_argument('hostgroupname',action='store',help='hostgroup_name',default=None)
 
 		#### iscsi diskgroup argument
 		self.iscsi_diskgroup_create.add_argument('diskgroupname',action='store',help='diskgroup_name')
 		self.iscsi_diskgroup_create.add_argument('diskname',action='store',help='disk_name',nargs='+')
+		self.iscsi_diskgroup_create.add_argument('-gui',help='iscsi gui',nargs='?',default='cmd')
 		self.iscsi_diskgroup_show.add_argument('show',action='store',help='diskgroup show [diskgroup_name]',nargs='?',default='all')
 		self.iscsi_diskgroup_delete.add_argument('diskgroupname',action='store',help='diskgroup_name',default=None)
 
@@ -106,6 +107,7 @@ class CLI():
 		self.iscsi_map_create.add_argument('mapname',action='store',help='map_name')
 		self.iscsi_map_create.add_argument('-hg',action='store',help='hostgroup_name')
 		self.iscsi_map_create.add_argument('-dg',action='store',help='diskgroup_name')
+		self.iscsi_map_create.add_argument('-gui',help='iscsi gui',nargs='?',default='cmd')
 		self.iscsi_map_show.add_argument('show',action='store',help='map show [map_name]',nargs='?',default='all')
 		self.iscsi_map_delete.add_argument('mapname',action='store',help='map_name',default=None)
 
@@ -113,9 +115,14 @@ class CLI():
 	def iscsi_judge(self):
 		js = JSON_OPERATION()
 		args = self.args
+		print(args)
 		if args.iscsi in ['host', 'h']:
 			if args.host in ['create', 'c']:
-				self.judge_hc(args, js)
+				if args.gui == 'gui':
+					handle = SocketSend()
+					handle.send_result(self.judge_hc,args,js)
+				else:
+					self.judge_hc(args, js)
 			elif args.host in ['show', 's']:
 				self.judge_hs(args, js)
 			elif args.host in ['delete', 'd']:
@@ -129,7 +136,11 @@ class CLI():
 				print("iscsi disk ? (choose from 'show')")
 		elif args.iscsi in ['hostgroup','hg']:
 			if args.hostgroup in ['create', 'c']:
-				self.judge_hgc(args, js)
+				if args.gui == 'gui':
+					handle = SocketSend()
+					handle.send_result(self.judge_hgc,args,js)
+				else:
+					self.judge_hgc(args, js)
 			elif args.hostgroup in ['show', 's']:
 				self.judge_hgs(args, js)
 			elif args.hostgroup in ['delete', 'd']:
@@ -138,7 +149,11 @@ class CLI():
 				print("iscsi hostgroup ? (choose from 'create', 'show', 'delete')")
 		elif args.iscsi in ['diskgroup','dg']:
 			if args.diskgroup in ['create', 'c']:
-				self.judge_dgc(args, js)
+				if args.gui == 'gui':
+					handle = SocketSend()
+					handle.send_result(self.judge_dgc,args,js)
+				else:
+					self.judge_dgc(args, js)
 			elif args.diskgroup in ['show', 's']:
 				self.judge_dgs(args, js)
 			elif args.diskgroup in ['delete', 'd']:
@@ -147,7 +162,11 @@ class CLI():
 				print("iscsi diskgroup ? (choose from 'create', 'show', 'delete')")
 		elif args.iscsi in ['map','m']:
 			if args.map in ['create', 'c']:
-				self.judge_mc(args, js)
+				if args.gui == 'gui':
+					handle = SocketSend()
+					handle.send_result(self.judge_mc,args,js)
+				else:
+					self.judge_mc(args, js)
 			elif args.map in ['show', 's']:
 				self.judge_ms(args, js)
 			elif args.map in ['delete', 'd']:
@@ -165,13 +184,14 @@ class CLI():
 		print("host:",args.iqn)
 		if js.check_key('Host',args.iqnname):
 			print("Fail! The Host " + args.iqnname + " already existed.")
+			return False
 		else:
 			js.creat_data("Host",args.iqnname,args.iqn)
 			print("Create success!")
+			return True
 
 	# host查询
 	def judge_hs(self, args, js):
-		print(type(args))
 		if args.show == 'all' or args.show == None:
 			hosts = js.get_data("Host")
 			print("	" + "{:<15}".format("Hostname") + "Iqn")
@@ -332,9 +352,11 @@ class CLI():
 				print("The diskgroup already map")
 			mapdata = self.map_data(js, crmdata, args.hg, args.dg)
 			print(mapdata)
-			self.map_crm_c(mapdata)
-			js.creat_data('Map',args.mapname,[args.hg,args.dg])
-			print("Create success!")
+			if self.map_crm_c(mapdata):
+				js.creat_data('Map',args.mapname,[args.hg,args.dg])
+				print("Create success!")
+			else:
+				pass
 
 	# map查询
 	def judge_ms(self, args, js):
@@ -366,9 +388,9 @@ class CLI():
 		if js.check_key('Map',args.mapname):
 			print(js.get_data('Map').get(args.mapname),"will probably be affected ")
 			resname = self.map_data_d(js, args.mapname)
-			self.map_crm_d(resname)
-			js.delete_data('Map',args.mapname)
-			print("Delete success!")
+			if self.map_crm_d(resname):
+				js.delete_data('Map',args.mapname)
+				print("Delete success!")
 		else:
 			print("Fail! Can't find " + args.mapname)
 
@@ -394,7 +416,7 @@ class CLI():
 		data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
 		print("get linstor r lv data:")
-		print(linstorlv)
+		print(linstorlv.get_data())
 		diskd = {}
 		for d in linstorlv.get_data():
 			for i in disk:
@@ -420,17 +442,29 @@ class CLI():
 		# print(mapdata['disk'])
 		for disk in mapdata['disk']:
 			res = [disk, mapdata['disk'].get(disk)[0], mapdata['disk'].get(disk)[1]]
-			cd.createres(res, mapdata['host_iqn'], targetiqn)
-			cd.createco(res[0], target)
-			cd.resstart(res[0])
-			print(" ")
+			if cd.createres(res, mapdata['host_iqn'], targetiqn):
+				c = cd.createco(res[0], target)
+				o = cd.createor(res[0], target)
+				s = cd.resstart(res[0])
+				if c and o and s:
+					print('create colocation and order success:',disk)
+				else:
+					print("create colocation and order fail")
+					return False
+			else:
+				print('create resource Fail!')
+				return False
+		return True
+
 
 	# 调用crm删除map
 	def map_crm_d(self, resname):
 		cd = crm()
 		for disk in resname:
-			cd.delres(disk)
-			print(" ")
+			if cd.delres(disk):
+				print("delete ",disk)
+			else:
+				return False
 		return True
 
 
