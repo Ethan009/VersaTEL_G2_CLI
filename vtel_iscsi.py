@@ -48,6 +48,9 @@ class CLI():
 		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
 		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
 		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
+		# self.iscsi_gui = sub_iscsi.add_parser('gui',help='iscsi gui')
+		# self.iscsi_gui.add_argument('i',help='gui data')
+
 
 		### iscsi host
 		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
@@ -151,6 +154,8 @@ class CLI():
 				self.judge_md(args, js)
 			else:
 				print("iscsi map ? (choose from 'create', 'show', 'delete')")
+		elif args.iscsi == 'gui':
+			print(args.gui)
 		else:
 			print("iscsi ？ (choose from 'host', 'disk', 'hg', 'dg', 'map')")
 
@@ -178,6 +183,7 @@ class CLI():
 				print(args.show, ":", js.get_data('Host').get(args.show))
 			else:
 				print("Fail! Can't find " + args.show)
+		return True
 
 	# host删除
 	def judge_hd(self, args, js):
