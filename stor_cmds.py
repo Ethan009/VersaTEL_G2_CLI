@@ -25,7 +25,7 @@ def print_excute_result(cmd):
         print('SUCCESS')
         return True
     else:
-        print('Fail')
+        print('FAIL')
         return result
 
 
@@ -49,6 +49,7 @@ class Action():
         if result == True:
             return True
         else:
+            print('FAIL')
             return result
 
     @staticmethod
@@ -58,6 +59,7 @@ class Action():
         if result == True:
             return True
         else:
+            print('FAIL')
             Action.linstor_delete_rd(res)
             return result
 
@@ -65,12 +67,13 @@ class Action():
     @staticmethod
     def create_res_auto(res,size,num):
         cmd = 'linstor r c %s --auto-place %d' % (res, num)
-        if Action.linstor_create_rd(res) and Action.linstor_create_vd(res,size):
+        if Action.linstor_create_rd(res) is True and Action.linstor_create_vd(res,size) is True:
             result = execute_cmd(cmd)
             if result == True:
                 print('SUCCESS')
                 return True
             else:
+                print('FAIL')
                 Action.linstor_delete_rd(res)
                 return result
 
@@ -196,18 +199,22 @@ class Action():
     #创建storagepool  -- ok
     @staticmethod
     def create_storagepool_lvm(node,stp,vg):
-        cmd = 'linstor storage-pool create lvm %s %s %s' %(node,stp,vg)
+        cmd = 'linstor --no-color storage-pool create lvm %s %s %s' %(node,stp,vg)
         action = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         result = action.stdout
         if reg.judge_cmd_result_war(str(result)):
             print(result.decode('utf-8'))
+        #发生ERROR的情况
         if reg.judge_cmd_result_err(str(result)):
+            #使用不存的vg
             if reg.get_err_not_vg(str(result),node,vg):
                 print(reg.get_err_not_vg(str(result),node,vg))
                 subprocess.check_output('linstor storage-pool delete %s %s'%(node,stp),shell=True)
             else:
                 print(result.decode('utf-8'))
+                print('FAIL')
                 return result.decode()
+        #成功
         elif reg.judge_cmd_result_suc(str(result)):
             print('SUCCESS')
             return True

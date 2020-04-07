@@ -21,7 +21,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                 break
             elif 'CLIcommands' in data:
                 self.request.send(b'data')
-                ex_cmd=self.request.recv(8192).decode()
+                ex_cmd=self.request.recv(8192).decode()#GUI rec
                 subprocess.getoutput(ex_cmd)
                 data_len = str(len(byteData))
                 print('data_len:',data_len)

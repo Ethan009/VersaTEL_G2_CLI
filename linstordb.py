@@ -772,10 +772,3 @@ class OutputData(DataProcess):
             self.sp_one(sp)
 
 
-#
-# t1 = datetime.datetime.now()
-# b = LINSTORDB()
-# c = b.data_base_dump()
-# t2 = datetime.datetime.now()
-# print(t2 - t1)
-# print()
