@@ -195,7 +195,7 @@ class LINSTORDB():
         # self.get_sp()
         end = nowtime()
 
-        print(end-start)
+        # print(end-start)
     def get_vg(self):
         result_vg = subprocess.Popen('vgs',shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         output_vg = result_vg.stdout.read().decode()
