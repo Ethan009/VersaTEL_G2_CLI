@@ -49,6 +49,10 @@ class CLI():
 		self.iscsi_hostgroup = sub_iscsi.add_parser('hostgroup',aliases=['hg'],help='hostgroup operation')
 		self.iscsi_diskgroup = sub_iscsi.add_parser('diskgroup',aliases=['dg'],help='diskgroup operation')
 		self.iscsi_map = sub_iscsi.add_parser('map',aliases='m',help='map operation')
+		self.iscsi_show = sub_iscsi.add_parser('show',aliases='s')
+
+		### iscsi show
+		self.iscsi_show.add_argument('js',help='js show')
 
 		### iscsi host
 		sub_iscsi_host = self.iscsi_host.add_subparsers(dest='host')
@@ -173,8 +177,10 @@ class CLI():
 				self.judge_md(args, js)
 			else:
 				print("iscsi map ? (choose from 'create', 'show', 'delete')")
-		elif args.iscsi == 'gui':
-			print(args.gui)
+		elif args.iscsi == 'show':
+			print(js.read_data_json())
+			handle = SocketSend()
+			handle.send_result(self.judge_s,js)
 		else:
 			print("iscsi ？ (choose from 'host', 'disk', 'hg', 'dg', 'map')")
 
@@ -245,6 +251,7 @@ class CLI():
 		print("iqn name:",args.iqnname)
 		if js.check_key('HostGroup',args.hostgroupname):
 			print("Fail! The HostGroup " + args.hostgroupname + " already existed.")
+			return False
 		else:
 			t = True
 			for i in args.iqnname:
@@ -254,8 +261,10 @@ class CLI():
 			if t:
 				js.creat_data('HostGroup',args.hostgroupname,args.iqnname)
 				print("Create success!")
+				return True
 			else:
 				print("Fail! Please give the true name.")
+				return False
 
 	# hostgroup查询
 	def judge_hgs(self, args, js):
@@ -293,6 +302,7 @@ class CLI():
 		print("disk name:",args.diskname)
 		if js.check_key('DiskGroup',args.diskgroupname):
 			print("Fail! The DiskGroup " + args.diskgroupname + " already existed.")
+			return False
 		else:
 			t = True
 			for i in args.diskname:
@@ -302,8 +312,10 @@ class CLI():
 			if t:
 				js.creat_data('DiskGroup',args.diskgroupname,args.diskname)
 				print("Create success!")
+				return True
 			else:
 				print("Fail! Please give the true name.")
+				return False
 
 	# diskgroup查询
 	def judge_dgs(self, args, js):
@@ -343,20 +355,23 @@ class CLI():
 		crmdata = self.crm_up(js)
 		if js.check_key('Map',args.mapname):
 			print("The Map \"" + args.mapname + "\" already existed.")
+			return False
 		elif js.check_key('HostGroup',args.hg) == False:
 			print("Can't find "+args.hg)
+			return False
 		elif js.check_key('DiskGroup',args.dg) == False:
 			print("Can't find "+args.dg) 
+			return False
 		else:
 			if js.check_value('Map',args.dg) == True:
 				print("The diskgroup already map")
 			mapdata = self.map_data(js, crmdata, args.hg, args.dg)
-			print(mapdata)
 			if self.map_crm_c(mapdata):
 				js.creat_data('Map',args.mapname,[args.hg,args.dg])
 				print("Create success!")
+				return True
 			else:
-				pass
+				return False
 
 	# map查询
 	def judge_ms(self, args, js):
@@ -394,6 +409,10 @@ class CLI():
 		else:
 			print("Fail! Can't find " + args.mapname)
 
+	def judge_s(self, js):
+		data = js.read_data_json()
+		return data
+
 	# 获取并更新crm信息
 	def crm_up(self, js):
 		cd = crm()
@@ -415,8 +434,8 @@ class CLI():
 		# data = cd.lsdata()
 		data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
-		print("get linstor r lv data:")
-		print(linstorlv.get_data())
+		# print("get linstor r lv data:")
+		# print(linstorlv.get_data())
 		diskd = {}
 		for d in linstorlv.get_data():
 			for i in disk:

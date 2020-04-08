@@ -44,6 +44,7 @@ class SocketSend():
         print(func_str)
         print(type(func_str))
 
+
 # def send_test(func,*args):
 #     ip_port = ('192.168.36.61', 12130)
 #
