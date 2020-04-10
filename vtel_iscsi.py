@@ -5,7 +5,7 @@ import os
 from pprint import pprint
 from crm_resouce import crm
 from getlinstor import GetLinstor
-from cli_socketclient import SocketSend
+# from cli_socketclient import SocketSend
 """
 @author: Zane
 @note: VersaTEL-iSCSI
@@ -119,7 +119,7 @@ class CLI():
 	def iscsi_judge(self):
 		js = JSON_OPERATION()
 		args = self.args
-		print(args)
+		# print(args)
 		if args.iscsi in ['host', 'h']:
 			if args.host in ['create', 'c']:
 				if args.gui == 'gui':
@@ -213,10 +213,10 @@ class CLI():
 
 	# host删除
 	def judge_hd(self, args, js):
-		print("Delete the host witch name is",args.iqnname,"...")
+		print("Delete the host <",args.iqnname,"> ...")
 		if js.check_key('Host',args.iqnname):
 			if js.check_value('HostGroup',args.iqnname):
-				print("Fail! The host in sameone hostgroup,Please delete the hostgroup first")
+				print("Fail! The host in ... hostgroup, Please delete the hostgroup first.")
 			else:
 				js.delete_data('Host',args.iqnname)
 				print("Delete success!")
@@ -286,7 +286,7 @@ class CLI():
 
 	# hostgroup删除
 	def judge_hgd(self, args, js):
-		print("Delete the hostgroup witch name is",args.hostgroupname)
+		print("Delete the hostgroup <",args.hostgroupname,"> ...")
 		if js.check_key('HostGroup',args.hostgroupname):
 			if js.check_value('Map',args.hostgroupname):
 				print("Fail! The hostgroup already map,Please delete the map")
@@ -337,7 +337,7 @@ class CLI():
 
 	# diskgroup删除
 	def judge_dgd(self, args, js):
-		print("Delete the diskgroup witch name is",args.diskgroupname,"...")
+		print("Delete the diskgroup <",args.diskgroupname,"> ...")
 		if js.check_key('DiskGroup',args.diskgroupname):
 			if js.check_value('Map',args.diskgroupname):
 				print("Fail! The diskgroup already map,Please delete the map")
@@ -399,7 +399,7 @@ class CLI():
 
 	# map删除
 	def judge_md(self, args, js):
-		print("Delete the map witch name is", args.mapname)
+		print("Delete the map <", args.mapname, ">...")
 		if js.check_key('Map',args.mapname):
 			print(js.get_data('Map').get(args.mapname),"will probably be affected ")
 			resname = self.map_data_d(js, args.mapname)
@@ -434,7 +434,7 @@ class CLI():
 		# data = cd.lsdata()
 		data = cd.get_data_linstor()
 		linstorlv = GetLinstor(data)
-		# print("get linstor r lv data:")
+		print("get linstor r lv data")
 		# print(linstorlv.get_data())
 		diskd = {}
 		for d in linstorlv.get_data():

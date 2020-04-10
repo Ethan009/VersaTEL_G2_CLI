@@ -106,7 +106,7 @@ class crm():
 		pvip = re.compile(r'primitive\s(\w*)\sIPaddr2\s\\\s*\w*\sip=([0-9.]*)\s\w*=(\d*)\s')
 		ptarget = re.compile(r'primitive\s(\w*)\s\w*\s\\\s*params\siqn="([a-zA-Z0-9.:-]*)"\s[a-z=-]*\sportals="([0-9.]*):\d*"\s\\')
 		redata = [plogical.findall(crmdata), pvip.findall(crmdata), ptarget.findall(crmdata)]
-		# print("get crm config data:")
+		print("get crm config data")
 		# print(redata)
 		return redata
 
@@ -145,6 +145,7 @@ class crm():
 		    + " path=\"" + res[2] \
 		    + "\" allowed_initiators=\"" + initiator +"\"" \
 		    + op + meta
+		print(mstr)
 		createcrm = subprocess.call(mstr,shell=True)
 		print ("call",mstr)
 		if createcrm == 0:
@@ -171,6 +172,8 @@ class crm():
 			else:
 				print("Stop ressource " + res + " fail, Please try again.")
 				return False
+			
+			time.sleep(3)
 			# crm conf del <LUN_NAME>
 			delsub = subprocess.call("crm conf del " + res,shell=True)
 			if delsub == 0:

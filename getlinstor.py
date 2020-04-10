@@ -23,3 +23,4 @@ class GetLinstor():
                 list_data_all.append(valid_data)
         list_data_all.pop(0)
         return list_data_all
+
