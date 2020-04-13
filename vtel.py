@@ -31,7 +31,7 @@ class CLI():
         self.vtel_iscsi = sub_vtel.add_parser('iscsi',help='Management operations for iSCSI',add_help=False)
         self.vtel_fc = sub_vtel.add_parser('fc',help='for fc resource management...',add_help=False)
         self.vtel_ceph = sub_vtel.add_parser('ceph',help='for ceph resource management...',add_help=False)
-        self.vtel_gui = sub_vtel.add_parser('gui',help='for gui')
+        self.vtel_stor.add_argument('-gui',dest='db',action='store_true',help=argparse.SUPPRESS,default=False)
 
     def parser_stor(self):
         ##stor
@@ -40,9 +40,7 @@ class CLI():
         self.stor_resource = sub_stor.add_parser('resource', aliases='r', help='Management operations for storagepool',usage=usage.resource)
         self.stor_storagepool = sub_stor.add_parser('storagepool', aliases=['sp'],help='Management operations for storagepool',usage=usage.storagepool)
         self.stor_snap = sub_stor.add_parser('snap', aliases=['sn'], help='Management operations for snapshot')
-        self.stor_gui = sub_stor.add_parser('gui',help='for GUI')
-        self.stor_gui.add_argument('-db',help='get linstor DB',action='store_true',dest='db',default=False)
-        self.stor_gui.add_argument('-vg',help='get vg',action='store_true',dest='vg',default=False)
+        # self.stor_gui = sub_stor.add_parser('gui',help='for GUI')
 
         ###node
         sub_node = self.stor_node.add_subparsers(dest='node_sub')
@@ -591,17 +589,13 @@ class CLI():
         else:
             self.stor_snap.print_help()
 
-    #gui端测试专用
-    def case_gui(self):
-        if self.args.db:
-            mes = cli_socketclient.SocketSend()
-            mes.send_result(mes.sql_script)#get sql_scipt
-
-
+    #gui端 get DB
+    def getdb(self):
+        mes = cli_socketclient.SocketSend()
+        mes.send_result(mes.sql_script)#get sql_scipt
 
     def judge(self):
         args = self.args
-
         if args.vtel_sub == 'stor':
             if self.args.stor_sub in ['node','n']:
                 self.case_node()
@@ -612,8 +606,8 @@ class CLI():
             elif self.args.stor_sub in ['snap','sn']:
                 self.case_snap()
 
-            elif self.args.stor_sub == 'gui':
-                self.case_gui()
+            elif self.args.db:
+                self.getdb()
             else:
                 self.vtel_stor.print_help()
 
