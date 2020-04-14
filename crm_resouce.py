@@ -110,9 +110,9 @@ class crm():
 		# print(redata)
 		return redata
 
-	def lsdata(self):
-		linstordata = self.resstatu
-		return linstordata
+	# def get_data_linstor(self):
+	# 	linstordata = self.resstatu
+	# 	return linstordata
 
 	def get_data_crm(self):
 		crmconfig = subprocess.getoutput('crm configure show')

@@ -8,8 +8,8 @@ ip_port = ('10.203.1.89',12144)
 
 class SocketSend():
     def __init__(self):
-        # self.client = socket.socket()
-        # self.client.connect(ip_port)
+        self.client = socket.socket()
+        self.client.connect(ip_port)
         pass
 
 
@@ -21,27 +21,27 @@ class SocketSend():
         func = func()
         print(func.encode())
 
-    # def send_result(self,func,*args):
-    #     client = self.client
-    #     func = func(*args)
-    #     func = pickle.dumps(func)
-    #     judge_conn = client.recv(8192).decode()
-    #     print(judge_conn)
-    #     client.send(b'database')
-    #     client.recv(8192)
-    #     client.sendall(func)
-    #     client.recv(8192)
-    #     client.send(b'exit')
-    #     client.close()
-
     def send_result(self,func,*args):
+        client = self.client
         func = func(*args)
         func = pickle.dumps(func)
-        print(func)
-        func_str = pickle.loads(func)
-        print('socket:')
-        print(func_str)
-        print(type(func_str))
+        judge_conn = client.recv(8192).decode()
+        print(judge_conn)
+        client.send(b'database')
+        client.recv(8192)
+        client.sendall(func)
+        client.recv(8192)
+        client.send(b'exit')
+        client.close()
+
+    # def send_result(self,func,*args):
+    #     func = func(*args)
+    #     func = pickle.dumps(func)
+    #     print(func)
+    #     func_str = pickle.loads(func)
+    #     print('socket:')
+    #     print(func_str)
+    #     print(type(func_str))
 
 
 
