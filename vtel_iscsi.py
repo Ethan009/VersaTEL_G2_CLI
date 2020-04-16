@@ -1,12 +1,11 @@
 #coding=utf-8
 import argparse
-import json
 import os
 from pprint import pprint
 from crm_resouce import crm
 from getlinstor import GetLinstor
 from iscsi_json import JSON_OPERATION
-# from cli_socketclient import SocketSend
+from cli_socketclient import SocketSend
 """
 @author: Zane
 @note: VersaTEL-iSCSI
@@ -353,7 +352,6 @@ class CLI():
 		print("map name:",args.mapname)
 		print("hostgroup name:",args.hg)
 		print("diskgroup name:",args.dg)
-		crmdata = self.crm_up(js)
 		if js.check_key('Map',args.mapname):
 			print("The Map \"" + args.mapname + "\" already existed.")
 			return False
@@ -366,17 +364,23 @@ class CLI():
 		else:
 			if js.check_value('Map',args.dg) == True:
 				print("The diskgroup already map")
-			mapdata = self.map_data(js, crmdata, args.hg, args.dg)
-			if self.map_crm_c(mapdata):
-				js.creat_data('Map',args.mapname,[args.hg,args.dg])
-				print("Create success!")
-				return True
-			else:
 				return False
+			else:
+				crmdata = self.crm_up(js)
+				if crmdata:
+					mapdata = self.map_data(js, crmdata, args.hg, args.dg)
+					if self.map_crm_c(mapdata):
+						js.creat_data('Map',args.mapname,[args.hg,args.dg])
+						print("Create success!")
+						return True
+					else:
+						return False
+				else:
+					return False
 
 	# map查询
 	def judge_ms(self, args, js):
-		self.crm_up(js)
+		crmdata = self.crm_up(js)
 		if args.show == 'all' or args.show == None:
 			print("Map:")
 			maps = js.get_data("Map")
@@ -410,6 +414,7 @@ class CLI():
 		else:
 			print("Fail! Can't find " + args.mapname)
 
+	# 读取所有json文档的数据
 	def judge_s(self, js):
 		data = js.read_data_json()
 		return data
@@ -417,10 +422,14 @@ class CLI():
 	# 获取并更新crm信息
 	def crm_up(self, js):
 		cd = crm()
-		crm_config_statu = cd.re_data()
-		# pprint(crm_config_statu)
-		js.up_crmconfig(crm_config_statu)
-		return crm_config_statu
+		crm_config_statu = cd.get_data_crm()
+		if 'ERROR' in crm_config_statu:
+			print("Could not perform requested operations, are you root?")
+			return False
+		else:
+			redata = cd.re_data(crm_config_statu)
+			js.up_crmconfig(redata)
+			return redata
 
 	# 获取创建map所需的数据
 	def map_data(self, js, crmdata, hg, dg):
@@ -475,16 +484,20 @@ class CLI():
 				return False
 		return True
 
-
 	# 调用crm删除map
 	def map_crm_d(self, resname):
 		cd = crm()
-		for disk in resname:
-			if cd.delres(disk):
-				print("delete ",disk)
-			else:
-				return False
-		return True
+		crm_config_statu = cd.get_data_crm()
+		if 'ERROR' in crm_config_statu:
+			print("Could not perform requested operations, are you root?")
+			return False
+		else:
+			for disk in resname:
+				if cd.delres(disk):
+					print("delete ", disk)
+				else:
+					return False
+			return True
 
 
 if __name__ == '__main__':

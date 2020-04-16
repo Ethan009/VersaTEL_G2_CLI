@@ -5,6 +5,7 @@ class JSON_OPERATION:
     def __init__(self):
         self.read_data = self.read_data_json()
 
+    #读取json文档
     def read_data_json(self):
         try:
             rdata = open("iSCSI_Data.json", encoding='utf-8')
